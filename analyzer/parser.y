@@ -44,7 +44,10 @@
 %token<TEXT> unit
 %token<TEXT> opUnit
 %token<TEXT> type
+%token<TEXT> opType
 %token<TEXT> delete_
+%token<TEXT> opDelete_
+%token<TEXT> opRep_
 %token<TEXT> name
 %token<TEXT> add
 %token<TEXT> id
@@ -127,11 +130,14 @@ func (x *exprLex) Lex(yylval *exprSymType) int {
     numberRec := 0
 	for {
 		c := x.next()
+        if c == eof {
+            return eof
+        }
         switch state {
             case 0:
                 if c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' {
                     //Se concatena el caracter a la cadena
-                    stringRec += string(c)
+                    stringRec = string(c)
                     state = 1
                 }
                 else if c >= '0' && c <= '9' {
@@ -139,16 +145,18 @@ func (x *exprLex) Lex(yylval *exprSymType) int {
                     state = 3
                 }
                 else if c == '-' {
+                    stringRec = string(c)
                     state = 4
                 }
                 else if c == '\\' {
-                    state = 5
+                    state = 8
                 }
                 else if c == '#' {
-                    state = 6
+                    state = 11
                 }
                 else if c == '"' {
                     //Indica el inicio de una cadena
+                    stringRec = ""
                     state = 2
                 }
                 else if c == ' ', c == '\t', c == '\n', c == '\r'{
@@ -158,73 +166,158 @@ func (x *exprLex) Lex(yylval *exprSymType) int {
                 }
             case 1:
                 if c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9' {
-                    state = 1
+                    stringRec += string(c)
                 } else {
-                    return 
+                    if c != eof {
+                        x.peek = c 
+                    }
+                    yylval.TEXT = stringRec
+                    return str_
                 }
             case 2:
                 if c == '"'{
-                    //Se presume que la cadena ya acabó
-                    //RETURN CADENA
-                } else if c == '\n' {
-                    //Error
+                    if c != eof {
+                        x.peek = c 
+                    }
+                    yylval.TEXT = stringRec
+                    return str_
+                } else if c != '\n' {
+                    stringRec += string(c)
+                } else {
+                    log.Printf("unclosed string")
                 }
             case 3:
                 if c >= '0' && c <= '9' {
-
+                    numberRec *= 10
+                    numberRec += int(c) - '0'
+                } else {
+                    if c != eof {
+                        x.peek = c
+                    }
+                    yylval.NUM = numberRec
+                    return num_int
                 }
+            case 4:
+                if c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' {
+                    stringRec += string(c)
+                    state = 5
+                }
+                else if c >= '0' && c <= '9' {
+                    numberRec = (int(c) - '0') * -1
+                    state = 7
+                }
+                else if c == '>' {
+                    yylval.TEXT = '->'
+                    return assig
+                } else {
+                    log.Printf("unrecognized character %q", c)
+                }
+            case 5:
+                if c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' {
+                    stringRec += string(c)
+                } else {
+                    if c != eof {
+                        x.peek = c
+                    }
+                    return x.reservedWords(stringRec)
+                }
+            case 7:
+                if c >= '0' && c <= '9' {
+                    numberRec *= 10
+                    numberRec = (int(c) - '0') * -1
+                } else {
+                    if c != eof {
+                        x.peek = c
+                    }
+                    yylval.NUM = numberRec
+                    return num_int   
+                }
+            case 8:
+                if c == '*' {
+                    state = 9
+                } else {
+                    if c != eof {
+                        x.peek = c
+                    }
+                    state = 0
+                }
+            case 9, 10:
+                if c == '\n'{
+                    stringRec = ""
+                    numberRec = 0
+                    state = 0
+                }
+            default: 
+                log.Printf("unrecognized character %q", c)
         }
-        
-		switch c {
-		case eof:
-			return eof
-		case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
-			return x.num(c, yylval)
-		case '-'
-			return 
-
-		// Recognize Unicode multiplication and division
-		// symbols, returning what the parser expects.
-		case '×':
-			return '*'
-		case '÷':
-			return '/'
-
-		case ' ', '\t', '\n', '\r':
-		default:
-			log.Printf("unrecognized character %q", c)
-		}
 	}
 }
 
-// Lex a number.
-func (x *exprLex) num(c rune, yylval *exprSymType) int {
-	add := func(b *bytes.Buffer, c rune) {
-		if _, err := b.WriteRune(c); err != nil {
-			log.Fatalf("WriteRune: %s", err)
-		}
-	}
-	var b bytes.Buffer
-	add(&b, c)
-	L: for {
-		c = x.next()
-		switch c {
-		case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.', 'e', 'E':
-			add(&b, c)
-		default:
-			break L
-		}
-	}
-	if c != eof {
-		x.peek = c
-	}
-	yylval.num = &big.Rat{}
-	_, ok := yylval.num.SetString(b.String())
-	if !ok {
-		log.Printf("bad number %q", b.String())
-		return eof
-	}
-	return NUM
+func (x *exprLex) reservedWords(s string) int {
+    yylval.TEXT = stringRec
+    switch s {
+        case "mkdisk":
+            return mkdisk
+        case "rmdisk":
+            return rmdisk
+        case "fdisk":
+            return fdisk
+        case "mount": 
+            return mount
+        case "unmount":
+            return unmount
+        case "exec": 
+            return exec
+        case "rep": 
+            return rep
+        case "-path":
+            return path
+        case "-size":
+            return size
+        case "-fit":
+            return fit
+        case "-unit":
+            return unit
+        case "-type":
+            return type
+        case "-delete":
+            return delete_
+        case "-name":
+            return name
+        case "-add":
+            return add
+        case "-id":
+            return id
+        case "bf":
+            return opFit
+        case "ff":
+            return opFit
+        case "wf":
+            return opFit
+        case "m":
+            return opUnit
+        case "k":
+            return opUnit
+        case "b":
+            return opUnit
+        case "p":
+            return opType
+        case "e":
+            return opType
+        case "l":
+            return opType
+        case "fast":
+            return opDelete_
+        case "full":
+            return opDelete_
+        case "mbr":
+            return opRep_
+        case "disk":
+            return opRep_
+        default:
+            return str_
+    }
+
 }
 
 // Return the next rune for the lexer.
