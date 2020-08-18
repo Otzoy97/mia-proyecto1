@@ -5,14 +5,14 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"miap1/analyzer"
+	"mia-proyecto1/analyzer"
 	"os"
 )
 
 func main() {
-	fmt.Println("ada")
-	const src = `mkdisk -path->/home/usr/ -name->disco1 -add->-80`
+	//src := []byte("mkdisk -path->\"/home/usr/\" -name->disco1 -add->-80\n")
 	in := bufio.NewReader(os.Stdin)
+	fmt.Println("Preaparado")
 	for {
 		if _, err := os.Stdout.WriteString(""); err != nil {
 			log.Fatalf("WriteString: %s", err)
@@ -27,5 +27,7 @@ func main() {
 		lex := analyzer.Lexer{Line: line}
 		lex.Scanner()
 	}
+	//lex := analyzer.Lexer{Line: src}
+	//lex.Scanner()
 
 }
