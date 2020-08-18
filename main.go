@@ -1,30 +1,31 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
-	"strings"
-	"text/scanner"
-	"unicode"
+	"io"
+	"log"
+	"miap1/analyzer"
+	"os"
 )
 
 func main() {
-	const src = `mkdisk -path->/home/usr/ -name->disco1 -add->-80 \*`
-
-	var s scanner.Scanner
-	s.Init(strings.NewReader(src))
-	s.Filename = "example"
-	s.IsIdentRune = func(ch rune, i int) bool {
-		return ch == '-' && i == 0 || unicode.IsLetter(ch) || ch == '/' || unicode.IsDigit(ch) && i > 0
-	}
-
-	for tok := s.Scan(); tok != scanner.EOF; tok = s.Scan() {
-		fmt.Printf("%s: %s\n", s.Position, s.TokenText())
-	}
-
-}
-
-func lex() {
+	fmt.Println("ada")
+	const src = `mkdisk -path->/home/usr/ -name->disco1 -add->-80`
+	in := bufio.NewReader(os.Stdin)
 	for {
-
+		if _, err := os.Stdout.WriteString(""); err != nil {
+			log.Fatalf("WriteString: %s", err)
+		}
+		line, err := in.ReadBytes('\n')
+		if err == io.EOF {
+			return
+		}
+		if err != nil {
+			log.Fatalf("ReadBytes: %s", err)
+		}
+		lex := analyzer.Lexer{Line: line}
+		lex.Scanner()
 	}
+
 }

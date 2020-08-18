@@ -1,6 +1,9 @@
-package cmd
+package cmdisk
 
-import "fmt"
+import (
+	"fmt"
+	"miap1/disk"
+)
 
 type mkdisk struct {
 	size int32
@@ -12,6 +15,8 @@ type mkdisk struct {
 func (m mkdisk) addOpp(key string, value interface{}) {
 	switch key {
 	case "size":
+		a := disk.Ebr{}
+		fmt.Println(a)
 		m.size = value.(int32)
 	case "path":
 		m.path = value.(string)
