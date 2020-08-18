@@ -2,6 +2,8 @@ package analyzer
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
 	"unicode/utf8"
 )
 
@@ -74,14 +76,12 @@ func (x *Lexer) next() rune {
 
 //Scanner ...
 func (x *Lexer) Scanner() {
+	tokQueue = nil
 	state := 0
 	stringRec := ""
 	numberRec := 0
-	for {
-		c := x.next()
-		if c == eof {
-			return
-		}
+	c := x.next()
+	for c != eof {
 		switch state {
 		case 0:
 			if c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' {
@@ -95,15 +95,18 @@ func (x *Lexer) Scanner() {
 				state = 4
 			} else if c == '\\' {
 				state = 8
+			} else if c == '/' {
+				stringRec = string(c)
+				state = 11
 			} else if c == '#' {
 				state = 10
 			} else if c == '"' {
 				stringRec = ""
 				state = 2
-			} else if c == ' ' || c == '\t' || c == '\n' || c == '\r' {
+			} else if c == ' ' || c == '\t' || c == '\r' {
+			} else if c == '\n' {
 				x.Row++
 				x.Col = 0
-				continue
 			} else {
 				fmt.Printf("unrecognized character %q (%v, %v)", c, x.Row, x.Col)
 			}
@@ -115,16 +118,19 @@ func (x *Lexer) Scanner() {
 					x.Peek = c
 				}
 				x.reservada(stringRec)
+				state = 0
 			}
 		case 2:
 			if c == '"' {
-				if c != eof {
-					x.Peek = c
-				}
-				tokQueue = append(tokQueue, &Token{lex: stringRec, row: x.Row, col: x.Col, tokname: "cadena"})
+				state = 0
+				tokQueue = append(tokQueue, &Token{lex: stringRec, row: x.Row, col: x.Col - len(stringRec), tokname: "cadena"})
 			} else if c != '\n' {
 				stringRec += string(c)
 			} else {
+				state = 0
+				if c != eof {
+					x.Peek = c
+				}
 				fmt.Printf("unclosed string (%v, %v)", x.Row, x.Col)
 			}
 		case 3:
@@ -135,7 +141,8 @@ func (x *Lexer) Scanner() {
 				if c != eof {
 					x.Peek = c
 				}
-				tokQueue = append(tokQueue, &Token{lex: numberRec, row: x.Row, col: x.Col, tokname: "numero"})
+				state = 0
+				tokQueue = append(tokQueue, &Token{lex: numberRec, row: x.Row, col: x.Col - len(strconv.Itoa(numberRec)), tokname: "numero"})
 			}
 		case 4:
 			if c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' {
@@ -145,8 +152,13 @@ func (x *Lexer) Scanner() {
 				numberRec = (int(c) - '0') * -1
 				state = 7
 			} else if c == '>' {
-				tokQueue = append(tokQueue, &Token{lex: "->", row: x.Row, col: x.Col, tokname: "asignacion"})
+				state = 0
+				tokQueue = append(tokQueue, &Token{lex: "->", row: x.Row, col: x.Col - len(stringRec), tokname: "asignacion"})
 			} else {
+				state = 0
+				if c != eof {
+					x.Peek = c
+				}
 				fmt.Printf("unrecognized character %q (%v, %v)", c, x.Row, x.Col)
 			}
 		case 5:
@@ -156,17 +168,19 @@ func (x *Lexer) Scanner() {
 				if c != eof {
 					x.Peek = c
 				}
+				state = 0
 				x.reservada(stringRec)
 			}
 		case 7:
 			if c >= '0' && c <= '9' {
 				numberRec *= 10
-				numberRec = (int(c) - '0') * -1
+				numberRec += (int(c) - '0') * -1
 			} else {
 				if c != eof {
 					x.Peek = c
 				}
-				tokQueue = append(tokQueue, &Token{lex: numberRec, row: x.Row, col: x.Col, tokname: "numero"})
+				state = 0
+				tokQueue = append(tokQueue, &Token{lex: numberRec, row: x.Row, col: x.Col - len(strconv.Itoa(numberRec)), tokname: "numero"})
 			}
 		case 8:
 			if c == '*' {
@@ -185,16 +199,46 @@ func (x *Lexer) Scanner() {
 				x.Row++
 				x.Col = 0
 			}
-		default:
-			return
+		case 11:
+			if (c < 'a' && c > 'z') || (c < 'A' && c > 'Z') || (c < '0' && c > '9') || c == '-' || c == '_' || c == 'ñ' || c == 'Ñ' {
+				fmt.Printf("unrecognized character %q (%v, %v)", c, x.Row, x.Col)
+				if c != eof {
+					x.Peek = c
+				}
+				state = 0
+			} else {
+				stringRec += string(c)
+				state = 12
+			}
+		case 12:
+			if c == '/' {
+				state = 11
+				stringRec += string(c)
+			} else if (c < 'a' && c > 'z') || (c < 'A' && c > 'Z') || (c < '0' && c > '9') || c == '-' || c == '_' || c == 'ñ' || c == 'Ñ' || c == '.' {
+				if c != eof {
+					x.Peek = c
+				}
+				tokQueue = append(tokQueue, &Token{lex: stringRec, row: x.Row, col: x.Col - len(stringRec), tokname: "ruta"})
+				stringRec = ""
+				state = 0
+			} else {
+				stringRec += string(c)
+				state = 12
+			}
 		}
+		c = x.next()
 	}
+	// for _, t := range tokQueue {
+	// 	fmt.Println(t)
+	// }
 }
 
 func (x *Lexer) reservada(s string) {
 	for _, v := range tokNames {
-		if v == s {
-			tokQueue = append(tokQueue, &Token{lex: s, row: x.Row, col: x.Col, tokname: v})
+		if v == strings.ToLower(s) {
+			tokQueue = append(tokQueue, &Token{lex: s, row: x.Row, col: x.Col - len(s), tokname: v})
+			return
 		}
 	}
+	tokQueue = append(tokQueue, &Token{lex: s, row: x.Row, col: x.Col - len(s), tokname: "cadena"})
 }
