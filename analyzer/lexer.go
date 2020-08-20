@@ -26,35 +26,64 @@ type Lexer struct {
 	Peek     rune
 }
 
-var tokNames = []string{"mkdisk",
-	"rmdisk",
-	"fdisk",
-	"mount",
-	"unmount",
-	"exec",
-	"rep",
-	"-path",
-	"-size",
-	"-fit",
-	"-unit",
-	"-type",
-	"-delete",
-	"-name",
-	"-add",
-	"-id",
-	"bf",
-	"ff",
-	"wf",
-	"m",
-	"k",
-	"b",
-	"p",
-	"e",
-	"l",
-	"fast",
-	"full",
-	"mbr",
-	"disk"}
+var tokNames map[string]string = map[string]string{"mkdisk": "mkdisk",
+	//"rmdisk":          "rmdisk",
+	"fdisk":           "fdisk",
+	"mount":           "mount",
+	"unmount":         "unmount",
+	"exec":            "exec",
+	"rep":             "rep",
+	"mkfs":            "mkfs",
+	"login":           "login",
+	"logout":          "logout",
+	"mkgrp":           "mkgrp",
+	"mkusr":           "mkusr",
+	"mkfile":          "mkfile",
+	"mkdir":           "mkdir",
+	"loss":            "loss",
+	"recovery":        "recovery",
+	"pause":           "pause",
+	"-nombre":         "nombre",
+	"-path":           "path",
+	"-size":           "size",
+	"-fit":            "fit",
+	"-unit":           "unit",
+	"-type":           "type",
+	"-delete":         "delete",
+	"-name":           "name",
+	"-add":            "add",
+	"-id":             "id",
+	"-ruta":           "ruta",
+	"-p":              "p",
+	"-cont":           "cont",
+	"-usr":            "usr",
+	"-pwd":            "pwd",
+	"-grp":            "grp",
+	"-tipo":           "tipo",
+	"bf":              "opFit",
+	"ff":              "opFit",
+	"wf":              "opFit",
+	"m":               "opUnit",
+	"k":               "opUnit",
+	"b":               "opUnit",
+	"p":               "opType",
+	"e":               "opType",
+	"l":               "opType",
+	"fast":            "opDel",
+	"full":            "opDel",
+	"mbr":             "opRep",
+	"disk":            "opRep",
+	"sb":              "opRep",
+	"bm_arbdir":       "opRep",
+	"bm_detdir":       "opRep",
+	"bm_inode":        "opRep",
+	"bm_block":        "opRep",
+	"bitacora":        "opRep",
+	"directorio":      "opRep",
+	"tree_file":       "opRep",
+	"tree_directorio": "opRep",
+	"tree_complete":   "opRep",
+	"ls":              "opRep"}
 
 func (x *Lexer) next() rune {
 	if x.Peek != eof {
@@ -108,7 +137,7 @@ func (x *Lexer) Scanner() {
 				x.Row++
 				x.Col = 0
 			} else {
-				fmt.Printf("unrecognized character %q (%v, %v)", c, x.Row, x.Col)
+				fmt.Printf("Caracter no reconocido %q (%v, %v)\n", c, x.Row, x.Col)
 			}
 		case 1:
 			if c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9' {
@@ -131,7 +160,7 @@ func (x *Lexer) Scanner() {
 				if c != eof {
 					x.Peek = c
 				}
-				fmt.Printf("unclosed string (%v, %v)", x.Row, x.Col)
+				fmt.Printf("Cadena sin cerrar (%v, %v)\n", x.Row, x.Col)
 			}
 		case 3:
 			if c >= '0' && c <= '9' {
@@ -159,7 +188,7 @@ func (x *Lexer) Scanner() {
 				if c != eof {
 					x.Peek = c
 				}
-				fmt.Printf("unrecognized character %q (%v, %v)", c, x.Row, x.Col)
+				fmt.Printf("Caracter no reconocido %q (%v, %v)\n", c, x.Row, x.Col)
 			}
 		case 5:
 			if c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' {
@@ -201,7 +230,7 @@ func (x *Lexer) Scanner() {
 			}
 		case 11:
 			if (c < 'a' && c > 'z') || (c < 'A' && c > 'Z') || (c < '0' && c > '9') || c == '-' || c == '_' || c == 'ñ' || c == 'Ñ' {
-				fmt.Printf("unrecognized character %q (%v, %v)", c, x.Row, x.Col)
+				fmt.Printf("Caracter no reconocido %q (%v, %v)\n", c, x.Row, x.Col)
 				if c != eof {
 					x.Peek = c
 				}
@@ -214,11 +243,11 @@ func (x *Lexer) Scanner() {
 			if c == '/' {
 				state = 11
 				stringRec += string(c)
-			} else if (c < 'a' && c > 'z') || (c < 'A' && c > 'Z') || (c < '0' && c > '9') || c == '-' || c == '_' || c == 'ñ' || c == 'Ñ' || c == '.' {
+			} else if (c < 'a' || c > 'z') && (c < 'A' || c > 'Z') && (c < '0' || c > '9') && c != '-' && c != '_' && c != 'ñ' && c != 'Ñ' && c != '.' {
 				if c != eof {
 					x.Peek = c
 				}
-				tokQueue = append(tokQueue, &Token{lex: stringRec, row: x.Row, col: x.Col - len(stringRec), tokname: "ruta"})
+				tokQueue = append(tokQueue, &Token{lex: stringRec, row: x.Row, col: x.Col - len(stringRec), tokname: "cadena"})
 				stringRec = ""
 				state = 0
 			} else {
@@ -228,14 +257,14 @@ func (x *Lexer) Scanner() {
 		}
 		c = x.next()
 	}
-	// for _, t := range tokQueue {
-	// 	fmt.Println(t)
-	// }
+	for _, t := range tokQueue {
+		fmt.Println(t)
+	}
 }
 
 func (x *Lexer) reservada(s string) {
-	for _, v := range tokNames {
-		if v == strings.ToLower(s) {
+	for k, v := range tokNames {
+		if k == strings.ToLower(s) {
 			tokQueue = append(tokQueue, &Token{lex: s, row: x.Row, col: x.Col - len(s), tokname: v})
 			return
 		}
