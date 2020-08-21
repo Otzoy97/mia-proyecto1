@@ -3,7 +3,7 @@ package cmd
 //Command ...
 type Command interface {
 	Run()
-	Validate()
+	Validate() bool
 	//AddOp ...
 	AddOp(string, interface{})
 }

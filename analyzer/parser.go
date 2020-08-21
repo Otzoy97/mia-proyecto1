@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"mia-proyecto1/cmd"
 	cmdisk "mia-proyecto1/cmd/disk"
+	"reflect"
 )
 
 //Regresa una función que acepta un arreglo s que inserta
@@ -208,21 +209,24 @@ func Parser() {
 			fmt.Println("Fin de tokens inesperado")
 			return
 		}
-		if isTerminal(x.(string)) {
+		if isTerminal(x) {
 			//Extrae un token
 			refX := tokQueue[pToken]
 			pToken++
-			if x != refX.tokname {
+			if reflect.TypeOf(x).Kind() == reflect.Func {
+				x.(func(int))(pToken)
+			} else if x.(string) != refX.tokname {
 				fmt.Printf("Se esperaba %v, se encontró %v (%v, %v)\n", x, refX.tokname, refX.row, refX.col)
 				//Ejecuta un modo pánico
 				continue
 			} else {
-				//Extrae el no terminal de la pila
+				//Extrae el terminal de la pila
 				stack = stack[:len(stack)-1]
 			}
 		} else {
 			if f := parserTable[x.(string)][tokQueue[pToken].tokname]; f != nil {
 				stack = stack[:len(stack)-1]
+				parserActions(x.(string))
 				f(&stack)
 			} else {
 				fmt.Print("Se esperaba ")
@@ -282,9 +286,12 @@ func parserActions(s string) func(t int) {
 }
 
 //Verifica si la cadena representa un terminal
-func isTerminal(s string) bool {
+func isTerminal(s interface{}) bool {
+	if reflect.TypeOf(s).Kind() == reflect.Func {
+		return false
+	}
 	//Si el primer caracter es 'mayúsucula', entonces es terminal
-	sx := []rune(s)
+	sx := []rune(s.(string))
 	if sx[0] >= 'A' && sx[0] <= 'Z' {
 		return false
 	}
