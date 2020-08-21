@@ -12,7 +12,6 @@ import (
 var setState = func(t ...interface{}) func(s *[]interface{}) {
 	return func(s *[]interface{}) {
 		*s = append(*s, t...)
-
 	}
 }
 
@@ -181,16 +180,21 @@ var parserTable map[string]map[string]func(*[]interface{}) = map[string]map[stri
 		"cont":   setState("cadena", "asignacion", "cont"),
 		"p":      setState("p"),
 		"ruta":   setState("cadena", "asignacion", "ruta"),
-		"nombre": setState("opRep", "asignacion", "nombre"),
+		"nombre": setState("cadena", "asignacion", "nombre"),
+		//"nombre": setState("opRep", "asignacion", "nombre"),
 		"id":     setState("cadena", "asignacion", "id"),
 		"add":    setState("numero", "asignacion", "add"),
-		"delete": setState("opDel", "asignacion", "delete"),
-		"fit":    setState("opFit", "asignacion", "fit"),
-		"type":   setState("opType", "asignacion", "type"),
-		"unit":   setState("opUnit", "asignacion", "unit"),
-		"name":   setState("cadena", "asignacion", "name"),
-		"size":   setState("numero", "asignacion", "size"),
-		"path":   setState("cadena", "asignacion", "path")}}
+		"delete": setState("cadena", "asignacion", "delete"),
+		//"delete": setState("opDel", "asignacion", "delete"),
+		"fit": setState("cadena", "asignacion", "fit"),
+		//"fit":    setState("opFit", "asignacion", "fit"),
+		"type": setState("cadena", "asignacion", "type"),
+		//"type":   setState("opType", "asignacion", "type"),
+		"unit": setState("cadena", "asignacion", "unit"),
+		//"unit": setState("opUnit", "asignacion", "unit"),
+		"name": setState("cadena", "asignacion", "name"),
+		"size": setState("numero", "asignacion", "size"),
+		"path": setState("cadena", "asignacion", "path")}}
 
 var cmdlst []cmd.Command
 
@@ -200,8 +204,7 @@ func Parser() {
 	pToken := 0
 	//Crea el stack
 	stack := []interface{}{"$", "S"}
-	//Agrega un $ al final del stream de tokens
-	tokQueue = append(tokQueue, &Token{lex: "$", row: tokQueue[len(tokQueue)-1].row, col: tokQueue[len(tokQueue)-1].col + 1, tokname: "$"})
+	cmdlst = nil
 	//Ultimo elemento del stack
 	for stack[len(stack)-1] != "$" {
 		x := stack[len(stack)-1]
@@ -226,7 +229,7 @@ func Parser() {
 		} else {
 			if f := parserTable[x.(string)][tokQueue[pToken].tokname]; f != nil {
 				stack = stack[:len(stack)-1]
-				parserActions(x.(string))
+				parserActions(x.(string), pToken)
 				f(&stack)
 			} else {
 				fmt.Print("Se esperaba ")
@@ -238,13 +241,12 @@ func Parser() {
 			}
 		}
 	}
-	//fmt.Println("Análisis sintáctico exitoso")
 }
 
 //Recibe una cadena y regresa una función
 //El argumento t de la función retornada
 //es la posición del apuntador de token al consumir el token
-func parserActions(s string) func(t int) {
+func parserActions(s string, t int) {
 	switch s {
 	case "S":
 	case "Cmd":
@@ -255,9 +257,7 @@ func parserActions(s string) func(t int) {
 	case "Exec":
 	case "Pause":
 	case "Mkdisk":
-		return func(t int) {
-			cmdlst = append(cmdlst, cmdisk.Mkdisk{Row: tokQueue[t].row})
-		}
+		cmdlst = append(cmdlst, cmdisk.Mkdisk{Row: tokQueue[t].row, Oplst: map[string]interface{}{}})
 	case "Fdisk":
 	case "Mount":
 	case "Unmount":
@@ -272,16 +272,13 @@ func parserActions(s string) func(t int) {
 	case "Login":
 	case "Mkfs":
 	case "Op":
-		return func(t int) {
-			if tokQueue[t].tokname == "p" {
-				cmdlst[len(cmdlst)-1].AddOp("p", true)
-			} else {
-				cmdlst[len(cmdlst)-1].AddOp(tokQueue[t].tokname, tokQueue[t-2].lex)
+		if tokQueue[t].tokname == "p" {
+			cmdlst[len(cmdlst)-1].AddOp("p", true)
+		} else {
+			if len(tokQueue)+1 >= (t+2) && (tokQueue[t+2].tokname == "cadena" || tokQueue[t+2].tokname == "numero") {
+				cmdlst[len(cmdlst)-1].AddOp(tokQueue[t].tokname, tokQueue[t+2].lex)
 			}
 		}
-	}
-	return func(t int) {
-
 	}
 }
 
