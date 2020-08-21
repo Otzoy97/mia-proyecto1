@@ -1,7 +1,8 @@
 package disk
 
+//Ebr ...
 type Ebr struct {
-	partStatus, partFit           byte
-	partStart, partSize, partNext int32
-	partName                      [16]byte
+	PartStatus, PartFit           byte
+	PartStart, PartSize, PartNext int32
+	PartName                      [16]byte
 }

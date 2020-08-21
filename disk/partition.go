@@ -1,7 +1,8 @@
 package disk
 
+//Partition ...
 type Partition struct {
-	partStatus, partType, partFit byte
-	partStart, partSize           int32
-	partName                      [16]rune
+	PartStatus, PartType, PartFit byte
+	PartStart, PartSize           int32
+	PartName                      [16]rune
 }

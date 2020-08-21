@@ -2,11 +2,12 @@ package disk
 
 import "time"
 
+//Mbr ...
 type Mbr struct {
-	mbrTamanio, mbrDiskSignature int32
-	mbrFechaCreacion             time.Time
-	mbrPartition1                Partition
-	mbrPartition2                Partition
-	mbrPartition3                Partition
-	mbrPartition4                Partition
+	MbrTamanio, MbrDiskSignature int32
+	MbrFechaCreacion             time.Time
+	MbrPartition1                Partition
+	MbrPartition2                Partition
+	MbrPartition3                Partition
+	MbrPartition4                Partition
 }
