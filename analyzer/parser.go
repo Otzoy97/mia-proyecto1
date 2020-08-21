@@ -1,18 +1,23 @@
 package analyzer
 
-import "fmt"
+import (
+	"fmt"
+	"mia-proyecto1/cmd"
+	cmdisk "mia-proyecto1/cmd/disk"
+)
 
 //Regresa una función que acepta un arreglo s que inserta
 //las cadenas especificadas en t
-var setState = func(t ...string) func(s *[]string) {
-	return func(s *[]string) {
+var setState = func(t ...interface{}) func(s *[]interface{}) {
+	return func(s *[]interface{}) {
 		*s = append(*s, t...)
+
 	}
 }
 
 //Define la tabla de análisis sintáctico
-var parserTable map[string]map[string]func(*[]string) = map[string]map[string]func(*[]string){
-	"S": map[string]func(*[]string){
+var parserTable map[string]map[string]func(*[]interface{}) = map[string]map[string]func(*[]interface{}){
+	"S": map[string]func(*[]interface{}){
 		"mkfs":     setState("Cmdlst"),
 		"login":    setState("Cmdlst"),
 		"logout":   setState("Cmdlst"),
@@ -30,7 +35,7 @@ var parserTable map[string]map[string]func(*[]string) = map[string]map[string]fu
 		"pause":    setState("Cmdlst"),
 		"exec":     setState("Cmdlst"),
 		"$":        setState()},
-	"Cmdlst": map[string]func(*[]string){
+	"Cmdlst": map[string]func(*[]interface{}){
 		"mkfs":     setState("Cmdlst1", "Cmd"),
 		"login":    setState("Cmdlst1", "Cmd"),
 		"logout":   setState("Cmdlst1", "Cmd"),
@@ -47,7 +52,7 @@ var parserTable map[string]map[string]func(*[]string) = map[string]map[string]fu
 		"mkdisk":   setState("Cmdlst1", "Cmd"),
 		"pause":    setState("Cmdlst1", "Cmd"),
 		"exec":     setState("Cmdlst1", "Cmd")},
-	"Cmdlst1": map[string]func(*[]string){
+	"Cmdlst1": map[string]func(*[]interface{}){
 		"mkfs":     setState("Cmdlst1", "Cmd"),
 		"login":    setState("Cmdlst1", "Cmd"),
 		"logout":   setState("Cmdlst1", "Cmd"),
@@ -65,7 +70,7 @@ var parserTable map[string]map[string]func(*[]string) = map[string]map[string]fu
 		"pause":    setState("Cmdlst1", "Cmd"),
 		"exec":     setState("Cmdlst1", "Cmd"),
 		"$":        setState()},
-	"Cmd": map[string]func(*[]string){
+	"Cmd": map[string]func(*[]interface{}){
 		"mkfs":     setState("Mkfs"),
 		"login":    setState("Login"),
 		"logout":   setState("Logout"),
@@ -82,39 +87,39 @@ var parserTable map[string]map[string]func(*[]string) = map[string]map[string]fu
 		"mkdisk":   setState("Mkdisk"),
 		"pause":    setState("Pause"),
 		"exec":     setState("Exec")},
-	"Mkfs": map[string]func(*[]string){
+	"Mkfs": map[string]func(*[]interface{}){
 		"mkfs": setState("Oplst", "mkfs")},
-	"Login": map[string]func(*[]string){
+	"Login": map[string]func(*[]interface{}){
 		"login": setState("Oplst", "login")},
-	"Logout": map[string]func(*[]string){
+	"Logout": map[string]func(*[]interface{}){
 		"logout": setState("logout")},
-	"Mkgrp": map[string]func(*[]string){
+	"Mkgrp": map[string]func(*[]interface{}){
 		"mkgrp": setState("Oplst", "mkgrp")},
-	"Mkusr": map[string]func(*[]string){
+	"Mkusr": map[string]func(*[]interface{}){
 		"mkusr": setState("Oplst", "mkusr")},
-	"Mkfile": map[string]func(*[]string){
+	"Mkfile": map[string]func(*[]interface{}){
 		"mkfile": setState("Oplst", "mkfile")},
-	"Mkdir": map[string]func(*[]string){
+	"Mkdir": map[string]func(*[]interface{}){
 		"mkdir": setState("Oplst", "mkdir")},
-	"Loss": map[string]func(*[]string){
+	"Loss": map[string]func(*[]interface{}){
 		"loss": setState("Oplst", "loss")},
-	"Recovery": map[string]func(*[]string){
+	"Recovery": map[string]func(*[]interface{}){
 		"recovery": setState("Oplst", "recovery")},
-	"Rep": map[string]func(*[]string){
+	"Rep": map[string]func(*[]interface{}){
 		"rep": setState("Oplst", "rep")},
-	"Unmount": map[string]func(*[]string){
+	"Unmount": map[string]func(*[]interface{}){
 		"unmount": setState("Oplst", "unmount")},
-	"Mount": map[string]func(*[]string){
+	"Mount": map[string]func(*[]interface{}){
 		"mount": setState("Oplst", "mount")},
-	"Fdisk": map[string]func(*[]string){
+	"Fdisk": map[string]func(*[]interface{}){
 		"fdisk": setState("Oplst", "fdisk")},
-	"Mkdisk": map[string]func(*[]string){
+	"Mkdisk": map[string]func(*[]interface{}){
 		"mkdisk": setState("Oplst", "mkdisk")},
-	"Pause": map[string]func(*[]string){
+	"Pause": map[string]func(*[]interface{}){
 		"pause": setState("pause")},
-	"Exec": map[string]func(*[]string){
+	"Exec": map[string]func(*[]interface{}){
 		"exec": setState("Oplst", "exec")},
-	"Oplst": map[string]func(*[]string){
+	"Oplst": map[string]func(*[]interface{}){
 		"tipo":   setState("Oplst1", "Op"),
 		"grp":    setState("Oplst1", "Op"),
 		"pwd":    setState("Oplst1", "Op"),
@@ -132,7 +137,7 @@ var parserTable map[string]map[string]func(*[]string) = map[string]map[string]fu
 		"name":   setState("Oplst1", "Op"),
 		"size":   setState("Oplst1", "Op"),
 		"path":   setState("Oplst1", "Op")},
-	"Oplst1": map[string]func(*[]string){
+	"Oplst1": map[string]func(*[]interface{}){
 		"tipo":     setState("Oplst1", "Op"),
 		"grp":      setState("Oplst1", "Op"),
 		"pwd":      setState("Oplst1", "Op"),
@@ -167,7 +172,7 @@ var parserTable map[string]map[string]func(*[]string) = map[string]map[string]fu
 		"pause":    setState(),
 		"exec":     setState(),
 		"$":        setState()},
-	"Op": map[string]func(*[]string){
+	"Op": map[string]func(*[]interface{}){
 		"tipo":   setState("opDel", "asignacion", "tipo"),
 		"grp":    setState("cadena", "asignacion", "grp"),
 		"pwd":    setState("cadena", "asignacion", "pwd"),
@@ -186,23 +191,27 @@ var parserTable map[string]map[string]func(*[]string) = map[string]map[string]fu
 		"size":   setState("numero", "asignacion", "size"),
 		"path":   setState("cadena", "asignacion", "path")}}
 
+var cmdlst []cmd.Command
+
 //Parser utiliza los token generados por el analizador léxico
 func Parser() {
+	//Apuntador para el flujo de tokens
+	pToken := 0
 	//Crea el stack
-	stack := []string{"$", "S"}
+	stack := []interface{}{"$", "S"}
 	//Agrega un $ al final del stream de tokens
 	tokQueue = append(tokQueue, &Token{lex: "$", row: tokQueue[len(tokQueue)-1].row, col: tokQueue[len(tokQueue)-1].col + 1, tokname: "$"})
 	//Ultimo elemento del stack
 	for stack[len(stack)-1] != "$" {
 		x := stack[len(stack)-1]
-		if len(tokQueue) < 1 {
+		if len(tokQueue)-1 < pToken {
 			fmt.Println("Fin de tokens inesperado")
 			return
 		}
-		if isTerminal(x) {
+		if isTerminal(x.(string)) {
 			//Extrae un token
-			refX := tokQueue[0]
-			tokQueue = tokQueue[1:]
+			refX := tokQueue[pToken]
+			pToken++
 			if x != refX.tokname {
 				fmt.Printf("Se esperaba %v, se encontró %v (%v, %v)\n", x, refX.tokname, refX.row, refX.col)
 				//Ejecuta un modo pánico
@@ -212,20 +221,64 @@ func Parser() {
 				stack = stack[:len(stack)-1]
 			}
 		} else {
-			if f := parserTable[x][tokQueue[0].tokname]; f != nil {
+			if f := parserTable[x.(string)][tokQueue[pToken].tokname]; f != nil {
 				stack = stack[:len(stack)-1]
 				f(&stack)
 			} else {
 				fmt.Print("Se esperaba ")
-				for k := range parserTable[x] {
+				for k := range parserTable[x.(string)] {
 					fmt.Print(k, " ")
 				}
-				fmt.Printf("(%v, %v)\n", tokQueue[0].row, tokQueue[0].col)
-				tokQueue = tokQueue[1:]
+				fmt.Printf("(%v, %v)\n", tokQueue[pToken].row, tokQueue[pToken].col)
+				pToken++
 			}
 		}
 	}
 	//fmt.Println("Análisis sintáctico exitoso")
+}
+
+//Recibe una cadena y regresa una función
+//El argumento t de la función retornada
+//es la posición del apuntador de token al consumir el token
+func parserActions(s string) func(t int) {
+	switch s {
+	case "S":
+	case "Cmd":
+	case "Cmdlst":
+	case "Cmdlst1":
+	case "Oplst":
+	case "Oplst1":
+	case "Exec":
+	case "Pause":
+	case "Mkdisk":
+		return func(t int) {
+			cmdlst = append(cmdlst, cmdisk.Mkdisk{Row: tokQueue[t].row})
+		}
+	case "Fdisk":
+	case "Mount":
+	case "Unmount":
+	case "Rep":
+	case "Recovery":
+	case "Loss":
+	case "Mkdir":
+	case "Mkfile":
+	case "Mkusr":
+	case "Mkgrp":
+	case "Logout":
+	case "Login":
+	case "Mkfs":
+	case "Op":
+		return func(t int) {
+			if tokQueue[t].tokname == "p" {
+				cmdlst[len(cmdlst)-1].AddOp("p", true)
+			} else {
+				cmdlst[len(cmdlst)-1].AddOp(tokQueue[t].tokname, tokQueue[t-2].lex)
+			}
+		}
+	}
+	return func(t int) {
+
+	}
 }
 
 //Verifica si la cadena representa un terminal
