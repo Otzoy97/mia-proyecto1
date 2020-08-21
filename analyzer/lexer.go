@@ -9,8 +9,6 @@ import (
 
 const eof = 0
 
-var tokQueue []*Token
-
 //Token ...
 type Token struct {
 	lex     interface{}
@@ -24,6 +22,7 @@ type Lexer struct {
 	Row, Col int
 	Line     []byte
 	Peek     rune
+	tokQueue []*Token
 }
 
 var tokNames map[string]string = map[string]string{"mkdisk": "mkdisk",
@@ -105,7 +104,7 @@ func (x *Lexer) next() rune {
 
 //Scanner ...
 func (x *Lexer) Scanner() {
-	tokQueue = nil
+	x.tokQueue = nil
 	state := 0
 	stringRec := ""
 	numberRec := 0
@@ -152,7 +151,7 @@ func (x *Lexer) Scanner() {
 		case 2:
 			if c == '"' {
 				state = 0
-				tokQueue = append(tokQueue, &Token{lex: stringRec, row: x.Row, col: x.Col - len(stringRec), tokname: "cadena"})
+				x.tokQueue = append(x.tokQueue, &Token{lex: stringRec, row: x.Row, col: x.Col - len(stringRec), tokname: "cadena"})
 			} else if c != '\n' {
 				stringRec += string(c)
 			} else {
@@ -171,7 +170,7 @@ func (x *Lexer) Scanner() {
 					x.Peek = c
 				}
 				state = 0
-				tokQueue = append(tokQueue, &Token{lex: numberRec, row: x.Row, col: x.Col - len(strconv.Itoa(numberRec)), tokname: "numero"})
+				x.tokQueue = append(x.tokQueue, &Token{lex: numberRec, row: x.Row, col: x.Col - len(strconv.Itoa(numberRec)), tokname: "numero"})
 			}
 		case 4:
 			if c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' {
@@ -182,7 +181,7 @@ func (x *Lexer) Scanner() {
 				state = 7
 			} else if c == '>' {
 				state = 0
-				tokQueue = append(tokQueue, &Token{lex: "->", row: x.Row, col: x.Col - len(stringRec), tokname: "asignacion"})
+				x.tokQueue = append(x.tokQueue, &Token{lex: "->", row: x.Row, col: x.Col - len(stringRec), tokname: "asignacion"})
 			} else {
 				state = 0
 				if c != eof {
@@ -209,7 +208,7 @@ func (x *Lexer) Scanner() {
 					x.Peek = c
 				}
 				state = 0
-				tokQueue = append(tokQueue, &Token{lex: numberRec, row: x.Row, col: x.Col - len(strconv.Itoa(numberRec)), tokname: "numero"})
+				x.tokQueue = append(x.tokQueue, &Token{lex: numberRec, row: x.Row, col: x.Col - len(strconv.Itoa(numberRec)), tokname: "numero"})
 			}
 		case 8:
 			if c == '*' {
@@ -247,7 +246,7 @@ func (x *Lexer) Scanner() {
 				if c != eof {
 					x.Peek = c
 				}
-				tokQueue = append(tokQueue, &Token{lex: stringRec, row: x.Row, col: x.Col - len(stringRec), tokname: "cadena"})
+				x.tokQueue = append(x.tokQueue, &Token{lex: stringRec, row: x.Row, col: x.Col - len(stringRec), tokname: "cadena"})
 				stringRec = ""
 				state = 0
 			} else {
@@ -258,15 +257,15 @@ func (x *Lexer) Scanner() {
 		c = x.next()
 	}
 	//Agrega un $ al final del stream de tokens
-	tokQueue = append(tokQueue, &Token{lex: "$", row: x.Row, col: x.Col + 1, tokname: "$"})
+	x.tokQueue = append(x.tokQueue, &Token{lex: "$", row: x.Row, col: x.Col + 1, tokname: "$"})
 }
 
 func (x *Lexer) reservada(s string) {
 	for k, v := range tokNames {
 		if k == strings.ToLower(s) {
-			tokQueue = append(tokQueue, &Token{lex: s, row: x.Row, col: x.Col - len(s), tokname: v})
+			x.tokQueue = append(x.tokQueue, &Token{lex: s, row: x.Row, col: x.Col - len(s), tokname: v})
 			return
 		}
 	}
-	tokQueue = append(tokQueue, &Token{lex: s, row: x.Row, col: x.Col - len(s), tokname: "cadena"})
+	x.tokQueue = append(x.tokQueue, &Token{lex: s, row: x.Row, col: x.Col - len(s), tokname: "cadena"})
 }
