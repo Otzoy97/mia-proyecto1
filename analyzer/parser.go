@@ -196,25 +196,29 @@ var parserTable map[string]map[string]func(*[]interface{}) = map[string]map[stri
 		"size": setState("numero", "asignacion", "size"),
 		"path": setState("cadena", "asignacion", "path")}}
 
-var cmdlst []cmd.Command
+//Parser ...
+type Parser struct {
+	Cmdlst []cmd.Command
+	Lex    *Lexer
+}
 
 //Parser utiliza los token generados por el analizador léxico
-func Parser() {
+func (p *Parser) Parser() {
 	//Apuntador para el flujo de tokens
 	pToken := 0
 	//Crea el stack
 	stack := []interface{}{"$", "S"}
-	cmdlst = nil
+	p.Cmdlst = nil
 	//Ultimo elemento del stack
 	for stack[len(stack)-1] != "$" {
 		x := stack[len(stack)-1]
-		if len(tokQueue)-1 < pToken {
+		if len(p.Lex.tokQueue)-1 < pToken {
 			fmt.Println("Fin de tokens inesperado")
 			return
 		}
 		if isTerminal(x) {
 			//Extrae un token
-			refX := tokQueue[pToken]
+			refX := p.Lex.tokQueue[pToken]
 			pToken++
 			if reflect.TypeOf(x).Kind() == reflect.Func {
 				x.(func(int))(pToken)
@@ -227,16 +231,16 @@ func Parser() {
 				stack = stack[:len(stack)-1]
 			}
 		} else {
-			if f := parserTable[x.(string)][tokQueue[pToken].tokname]; f != nil {
+			if f := parserTable[x.(string)][p.Lex.tokQueue[pToken].tokname]; f != nil {
 				stack = stack[:len(stack)-1]
-				parserActions(x.(string), pToken)
+				p.parserActions(x.(string), pToken)
 				f(&stack)
 			} else {
 				fmt.Print("Se esperaba ")
 				for k := range parserTable[x.(string)] {
 					fmt.Print(k, " ")
 				}
-				fmt.Printf("(%v, %v)\n", tokQueue[pToken].row, tokQueue[pToken].col)
+				fmt.Printf("(%v, %v)\n", p.Lex.tokQueue[pToken].row, p.Lex.tokQueue[pToken].col)
 				pToken++
 			}
 		}
@@ -246,7 +250,7 @@ func Parser() {
 //Recibe una cadena y regresa una función
 //El argumento t de la función retornada
 //es la posición del apuntador de token al consumir el token
-func parserActions(s string, t int) {
+func (p *Parser) parserActions(s string, t int) {
 	switch s {
 	case "S":
 	case "Cmd":
@@ -257,7 +261,7 @@ func parserActions(s string, t int) {
 	case "Exec":
 	case "Pause":
 	case "Mkdisk":
-		cmdlst = append(cmdlst, cmdisk.Mkdisk{Row: tokQueue[t].row, Oplst: map[string]interface{}{}})
+		p.Cmdlst = append(p.Cmdlst, cmdisk.Mkdisk{Row: p.Lex.tokQueue[t].row, Oplst: map[string]interface{}{}})
 	case "Fdisk":
 	case "Mount":
 	case "Unmount":
@@ -272,11 +276,11 @@ func parserActions(s string, t int) {
 	case "Login":
 	case "Mkfs":
 	case "Op":
-		if tokQueue[t].tokname == "p" {
-			cmdlst[len(cmdlst)-1].AddOp("p", true)
+		if p.Lex.tokQueue[t].tokname == "p" {
+			p.Cmdlst[len(p.Cmdlst)-1].AddOp("p", true)
 		} else {
-			if len(tokQueue)+1 >= (t+2) && (tokQueue[t+2].tokname == "cadena" || tokQueue[t+2].tokname == "numero") {
-				cmdlst[len(cmdlst)-1].AddOp(tokQueue[t].tokname, tokQueue[t+2].lex)
+			if len(p.Lex.tokQueue)+1 >= (t+2) && (p.Lex.tokQueue[t+2].tokname == "cadena" || p.Lex.tokQueue[t+2].tokname == "numero") {
+				p.Cmdlst[len(p.Cmdlst)-1].AddOp(p.Lex.tokQueue[t].tokname, p.Lex.tokQueue[t+2].lex)
 			}
 		}
 	}
