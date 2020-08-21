@@ -15,6 +15,8 @@ func main() {
 	auxLine := []byte{}
 	aux := ""
 	fmt.Println("Ready")
+	lex := analyzer.Lexer{}
+	par := analyzer.Parser{Lex: &lex}
 	for {
 	LeerEntrada:
 		//Lee la entrada del usuario
@@ -34,9 +36,12 @@ func main() {
 			goto LeerEntrada
 		}
 		//Analiza los bytes almacenados en auxLine
-		lex := analyzer.Lexer{Line: auxLine}
+		lex.Line = auxLine
 		lex.Scanner()
-		analyzer.Parser()
+		par.Parser()
+		for i := 0; i < len(par.Cmdlst); i++ {
+			par.Cmdlst[i].Run()
+		}
 		//Reinicia auxLine
 		auxLine = nil
 	}
