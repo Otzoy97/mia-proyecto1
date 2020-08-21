@@ -1,7 +1,9 @@
 package cmd
 
-type command interface {
-	run()
-	validate() bool
-	addOpp()
+//Command ...
+type Command interface {
+	Run()
+	Validate()
+	//AddOp ...
+	AddOp(string, interface{})
 }
