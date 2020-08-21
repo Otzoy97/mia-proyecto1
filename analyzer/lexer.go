@@ -60,30 +60,30 @@ var tokNames map[string]string = map[string]string{"mkdisk": "mkdisk",
 	"-pwd":            "pwd",
 	"-grp":            "grp",
 	"-tipo":           "tipo",
-	"bf":              "opFit",
-	"ff":              "opFit",
-	"wf":              "opFit",
-	"m":               "opUnit",
-	"k":               "opUnit",
-	"b":               "opUnit",
-	"p":               "opType",
-	"e":               "opType",
-	"l":               "opType",
-	"fast":            "opDel",
-	"full":            "opDel",
-	"mbr":             "opRep",
-	"disk":            "opRep",
-	"sb":              "opRep",
-	"bm_arbdir":       "opRep",
-	"bm_detdir":       "opRep",
-	"bm_inode":        "opRep",
-	"bm_block":        "opRep",
-	"bitacora":        "opRep",
-	"directorio":      "opRep",
-	"tree_file":       "opRep",
-	"tree_directorio": "opRep",
-	"tree_complete":   "opRep",
-	"ls":              "opRep"}
+	"bf":              "cadena", //"opFit",
+	"ff":              "cadena", //"opFit",
+	"wf":              "cadena", //"opFit",
+	"m":               "cadena", //"opUnit",
+	"k":               "cadena", //"opUnit",
+	"b":               "cadena", //"opUnit",
+	"p":               "cadena", //"opType",
+	"e":               "cadena", //"opType",
+	"l":               "cadena", //"opType",
+	"fast":            "cadena", //"opDel",
+	"full":            "cadena", //"opDel",
+	"mbr":             "cadena", //"opRep",
+	"disk":            "cadena", //"opRep",
+	"sb":              "cadena", //"opRep",
+	"bm_arbdir":       "cadena", //"opRep",
+	"bm_detdir":       "cadena", //"opRep",
+	"bm_inode":        "cadena", //"opRep",
+	"bm_block":        "cadena", //"opRep",
+	"bitacora":        "cadena", //"opRep",
+	"directorio":      "cadena", //"opRep",
+	"tree_file":       "cadena", //"opRep",
+	"tree_directorio": "cadena", //"opRep",
+	"tree_complete":   "cadena", //"opRep",
+	"ls":              "cadena"} //"opRep"
 
 func (x *Lexer) next() rune {
 	if x.Peek != eof {
@@ -257,9 +257,8 @@ func (x *Lexer) Scanner() {
 		}
 		c = x.next()
 	}
-	for _, t := range tokQueue {
-		fmt.Println(t)
-	}
+	//Agrega un $ al final del stream de tokens
+	tokQueue = append(tokQueue, &Token{lex: "$", row: x.Row, col: x.Col + 1, tokname: "$"})
 }
 
 func (x *Lexer) reservada(s string) {
