@@ -1,17 +1,19 @@
 package cmdisk
 
+import "fmt"
+
 //Mkdisk ...
 type Mkdisk struct {
 	size, Row int
 	path      string
 	name      string
 	unit      string
-	oplst     map[string]interface{}
+	Oplst     map[string]interface{}
 }
 
 //AddOp ...
 func (m Mkdisk) AddOp(key string, value interface{}) {
-	m.oplst[key] = value
+	m.Oplst[key] = value
 }
 
 //Validate ...
@@ -21,5 +23,7 @@ func (m Mkdisk) Validate() bool {
 
 //Run ...
 func (m Mkdisk) Run() {
-	return
+	for k, v := range m.Oplst {
+		fmt.Printf("%v -> %v\n", k, v)
+	}
 }
