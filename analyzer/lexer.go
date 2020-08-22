@@ -1,10 +1,11 @@
 package analyzer
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
 	"unicode/utf8"
+
+	"github.com/fatih/color"
 )
 
 const eof = 0
@@ -136,7 +137,7 @@ func (x *Lexer) Scanner() {
 				x.Row++
 				x.Col = 0
 			} else {
-				fmt.Printf("Caracter no reconocido %q (%v, %v)\n", c, x.Row, x.Col)
+				color.New(color.FgHiYellow).Printf("Caracter no reconocido %q (%v, %v)\n", c, x.Row, x.Col)
 			}
 		case 1:
 			if c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9' {
@@ -159,7 +160,7 @@ func (x *Lexer) Scanner() {
 				if c != eof {
 					x.Peek = c
 				}
-				fmt.Printf("Cadena sin cerrar (%v, %v)\n", x.Row, x.Col)
+				color.New(color.FgHiYellow).Printf("Cadena sin cerrar (%v, %v)\n", x.Row, x.Col)
 			}
 		case 3:
 			if c >= '0' && c <= '9' {
@@ -187,7 +188,7 @@ func (x *Lexer) Scanner() {
 				if c != eof {
 					x.Peek = c
 				}
-				fmt.Printf("Caracter no reconocido %q (%v, %v)\n", c, x.Row, x.Col)
+				color.New(color.FgHiYellow).Printf("Caracter no reconocido %q (%v, %v)\n", c, x.Row, x.Col)
 			}
 		case 5:
 			if c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' {
@@ -229,7 +230,7 @@ func (x *Lexer) Scanner() {
 			}
 		case 11:
 			if (c < 'a' && c > 'z') || (c < 'A' && c > 'Z') || (c < '0' && c > '9') || c == '-' || c == '_' || c == 'ñ' || c == 'Ñ' {
-				fmt.Printf("Caracter no reconocido %q (%v, %v)\n", c, x.Row, x.Col)
+				color.New(color.FgHiYellow).Printf("Caracter no reconocido %q (%v, %v)\n", c, x.Row, x.Col)
 				if c != eof {
 					x.Peek = c
 				}
@@ -263,7 +264,7 @@ func (x *Lexer) Scanner() {
 func (x *Lexer) reservada(s string) {
 	for k, v := range tokNames {
 		if k == strings.ToLower(s) {
-			x.tokQueue = append(x.tokQueue, &Token{lex: s, row: x.Row, col: x.Col - len(s), tokname: v})
+			x.tokQueue = append(x.tokQueue, &Token{lex: strings.ToLower(s), row: x.Row, col: x.Col - len(s), tokname: v})
 			return
 		}
 	}

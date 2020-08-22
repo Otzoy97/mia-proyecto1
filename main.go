@@ -2,11 +2,11 @@ package main
 
 import (
 	"bufio"
-	"fmt"
-	"log"
 	"mia-proyecto1/analyzer"
 	"os"
 	"strings"
+
+	"github.com/fatih/color"
 )
 
 func main() {
@@ -14,7 +14,7 @@ func main() {
 	in := bufio.NewReader(os.Stdin)
 	auxLine := []byte{}
 	aux := ""
-	fmt.Println("Ready")
+	color.Green("Ready")
 	lex := analyzer.Lexer{}
 	par := analyzer.Parser{Lex: &lex}
 	for {
@@ -22,7 +22,7 @@ func main() {
 		//Lee la entrada del usuario
 		line, err := in.ReadBytes('\n')
 		if err != nil {
-			log.Fatalf("Error al leer entrada del usuario: %s", err)
+			color.Red("Error al leer entrada del usuario: %s", err)
 		}
 		//Convierte line a una cadena y
 		//asi poder realizar operaciones entre cadenas

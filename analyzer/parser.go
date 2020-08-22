@@ -5,6 +5,8 @@ import (
 	"mia-proyecto1/cmd"
 	cmdisk "mia-proyecto1/cmd/disk"
 	"reflect"
+
+	"github.com/fatih/color"
 )
 
 //Regresa una función que acepta un arreglo s que inserta
@@ -173,7 +175,8 @@ var parserTable map[string]map[string]func(*[]interface{}) = map[string]map[stri
 		"exec":     setState(),
 		"$":        setState()},
 	"Op": map[string]func(*[]interface{}){
-		"tipo":   setState("opDel", "asignacion", "tipo"),
+		"tipo": setState("cadena", "asignacion", "tipo"),
+		//"tipo":   setState("opDel", "asignacion", "tipo"),
 		"grp":    setState("cadena", "asignacion", "grp"),
 		"pwd":    setState("cadena", "asignacion", "pwd"),
 		"usr":    setState("cadena", "asignacion", "usr"),
@@ -213,7 +216,7 @@ func (p *Parser) Parser() {
 	for stack[len(stack)-1] != "$" {
 		x := stack[len(stack)-1]
 		if len(p.Lex.tokQueue)-1 < pToken {
-			fmt.Println("Fin de tokens inesperado")
+			color.New(color.FgHiRed, color.Bold).Println("Fin de tokens inesperado")
 			return
 		}
 		if isTerminal(x) {
@@ -223,7 +226,7 @@ func (p *Parser) Parser() {
 			if reflect.TypeOf(x).Kind() == reflect.Func {
 				x.(func(int))(pToken)
 			} else if x.(string) != refX.tokname {
-				fmt.Printf("Se esperaba %v, se encontró %v (%v, %v)\n", x, refX.tokname, refX.row, refX.col)
+				color.New(color.FgHiYellow).Printf("Se esperaba %v, se encontró %v (%v, %v)\n", x, refX.tokname, refX.row, refX.col)
 				//Ejecuta un modo pánico
 				continue
 			} else {
@@ -236,11 +239,11 @@ func (p *Parser) Parser() {
 				p.parserActions(x.(string), pToken)
 				f(&stack)
 			} else {
-				fmt.Print("Se esperaba ")
+				color.New(color.FgHiYellow).Print("Se esperaba ")
 				for k := range parserTable[x.(string)] {
 					fmt.Print(k, " ")
 				}
-				fmt.Printf("(%v, %v)\n", p.Lex.tokQueue[pToken].row, p.Lex.tokQueue[pToken].col)
+				color.New(color.FgHiYellow).Printf("(%v, %v)\n", p.Lex.tokQueue[pToken].row, p.Lex.tokQueue[pToken].col)
 				pToken++
 			}
 		}
