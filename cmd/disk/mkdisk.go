@@ -1,8 +1,14 @@
 package cmdisk
 
 import (
-	"fmt"
+	"bytes"
+	"encoding/binary"
+	"math/rand"
 	"mia-proyecto1/cmd"
+	"mia-proyecto1/disk"
+	"os"
+	"strings"
+	"time"
 
 	"github.com/fatih/color"
 )
@@ -35,7 +41,14 @@ func (m Mkdisk) Validate() bool {
 		color.New(color.FgHiYellow).Printf("Mkdisk: name no se encontró (%v)\n", m.Row)
 		f = false
 	} else {
-		m.name = m.Oplst["name"].(string)
+		//Verifica que name tenga extensión dsk
+		sCon := strings.Split(m.Oplst["name"].(string), ".")
+		if len(sCon) == 2 && sCon[1] == "dsk" {
+			m.name = m.Oplst["name"].(string)
+		} else {
+			color.New(color.FgHiYellow).Printf("Mkdisk: name debe tener extensión .dsk (%v)\n", m.Row)
+			f = false
+		}
 	}
 	if !cmd.ValidateOptions(&m.Oplst, "size") {
 		color.New(color.FgHiYellow).Printf("Mkdisk: size no se encontró (%v)\n", m.Row)
@@ -67,7 +80,35 @@ func (m Mkdisk) Validate() bool {
 
 //Run ...
 func (m Mkdisk) Run() {
-	for k, v := range m.Oplst {
-		fmt.Printf("%v -> %v\n", k, v)
+	//Crea el directorio
+	if !m.createFolders() {
+		color.New(color.FgHiRed, color.Bold).Println("Mkdisk fracasó")
+		return
 	}
+	//Crea el mbr
+	mbr := disk.Mbr{MbrTamanio: m.size * m.unit * 1024, MbrDiskSignature: rand.Intn(10000000), MbrFechaCreacion: time.Now()}
+	//Crea el archivo
+	file, err := os.Create(m.path + "/" + m.name)
+	defer file.Close()
+	if err != nil {
+		color.New(color.FgHiYellow).Printf("Mkdisk: no se pudo crear el archivo '%v'\n%v", m.name, err.Error())
+	}
+	var bin bytes.Buffer
+	arrB := make([]byte, 1024*m.unit)
+	for i := 0; i < m.size; i++ {
+		binary.Write(&bin, binary.BigEndian, &arrB)
+		file.Write(bin.Bytes())
+	}
+	if !mbr.WriteMbr(file) {
+		color.New(color.FgHiGreen, color.Bold).Printf("Mkdisk: se creó el disco '%v'", m.path+"/"+m.name)
+	}
+}
+
+//Verifica que cada carpeta del path exista. Si no existe la crea
+func (m Mkdisk) createFolders() bool {
+	if err := os.MkdirAll(m.path, os.ModePerm); err == nil {
+		color.New(color.FgHiYellow).Printf("Mkdisk: no se pudo crear el directorio '%v'\n%v\n", m.path, err.Error())
+		return false
+	}
+	return true
 }
