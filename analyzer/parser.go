@@ -264,7 +264,7 @@ func (p *Parser) parserActions(s string, t int) {
 	case "Exec":
 	case "Pause":
 	case "Mkdisk":
-		p.Cmdlst = append(p.Cmdlst, cmdisk.Mkdisk{Row: p.Lex.tokQueue[t].row, Oplst: map[string]interface{}{}})
+		p.Cmdlst = append(p.Cmdlst, &cmdisk.Mkdisk{Row: p.Lex.tokQueue[t].row, Oplst: map[string]interface{}{}})
 	case "Fdisk":
 	case "Mount":
 	case "Unmount":
