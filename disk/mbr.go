@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"os"
-	"time"
 	"unsafe"
 
 	"github.com/fatih/color"
@@ -12,8 +11,8 @@ import (
 
 //Mbr ...
 type Mbr struct {
-	MbrTamanio, MbrDiskSignature int
-	MbrFechaCreacion             time.Time
+	MbrTamanio, MbrDiskSignature uint32
+	MbrFechaCreacion             [15]byte
 	MbrPartition1                Partition
 	MbrPartition2                Partition
 	MbrPartition3                Partition
@@ -22,8 +21,8 @@ type Mbr struct {
 
 //WriteMbr escribe el mbr en el archivo f
 func (m *Mbr) WriteMbr(f *os.File) bool {
-	var bin bytes.Buffer
-	binary.Write(&bin, binary.BigEndian, m)
+	bin := new(bytes.Buffer)
+	binary.Write(bin, binary.BigEndian, m)
 	f.Seek(0, 0)
 	if _, err := f.WriteAt(bin.Bytes(), 0); err != nil {
 		color.New(color.FgHiYellow).Printf("No se pudo escribir el mbr %v\n", f.Name())
