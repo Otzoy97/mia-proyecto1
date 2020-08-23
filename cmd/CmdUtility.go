@@ -8,7 +8,7 @@ import (
 //se asegura que el tipo de dato sea el correcto
 func ValidateOptions(m *map[string]interface{}, s string) bool {
 	//Verifica que la llave exista
-	if _, mCheck := (*m)[s]; mCheck {
+	if _, mCheck := (*m)[s]; !mCheck {
 		return false
 	}
 	//Recupera el valor de la llave y el tipo de dato
