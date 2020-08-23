@@ -23,14 +23,14 @@ type Mkdisk struct {
 }
 
 //AddOp ...
-func (m Mkdisk) AddOp(key string, value interface{}) {
+func (m *Mkdisk) AddOp(key string, value interface{}) {
 	m.Oplst[key] = value
 }
 
 //Validate ...
-func (m Mkdisk) Validate() bool {
+func (m *Mkdisk) Validate() bool {
 	f := true
-	m.unit = 1024
+	m.unit = 1000
 	if !cmd.ValidateOptions(&m.Oplst, "path") {
 		color.New(color.FgHiYellow).Printf("Mkdisk: path no se encontró (%v)\n", m.Row)
 		f = false
@@ -65,7 +65,7 @@ func (m Mkdisk) Validate() bool {
 		case "k":
 			m.unit = 1
 		case "m":
-			m.unit = 1024
+			m.unit = 1000
 		default:
 			color.New(color.FgHiYellow).Println("Mkdisk: unit deb ser 'k' o 'm'")
 			f = false
@@ -79,34 +79,38 @@ func (m Mkdisk) Validate() bool {
 }
 
 //Run ...
-func (m Mkdisk) Run() {
+func (m *Mkdisk) Run() {
 	//Crea el directorio
 	if !m.createFolders() {
 		color.New(color.FgHiRed, color.Bold).Println("Mkdisk fracasó")
 		return
 	}
 	//Crea el mbr
-	mbr := disk.Mbr{MbrTamanio: m.size * m.unit * 1024, MbrDiskSignature: rand.Intn(10000000), MbrFechaCreacion: time.Now()}
+	mbr := disk.Mbr{MbrTamanio: m.size * m.unit * 1000, MbrDiskSignature: rand.Intn(10000000), MbrFechaCreacion: time.Now()}
 	//Crea el archivo
 	file, err := os.Create(m.path + "/" + m.name)
 	defer file.Close()
 	if err != nil {
 		color.New(color.FgHiYellow).Printf("Mkdisk: no se pudo crear el archivo '%v'\n%v", m.name, err.Error())
+		color.New(color.FgHiRed, color.Bold).Println("Mkdisk fracasó")
+		return
 	}
-	var bin bytes.Buffer
-	arrB := make([]byte, 1024*m.unit)
+	bin := new(bytes.Buffer)
+	arrB := make([]byte, 1000*m.unit)
+	binary.Write(bin, binary.BigEndian, &arrB)
 	for i := 0; i < m.size; i++ {
-		binary.Write(&bin, binary.BigEndian, &arrB)
 		file.Write(bin.Bytes())
 	}
-	if !mbr.WriteMbr(file) {
-		color.New(color.FgHiGreen, color.Bold).Printf("Mkdisk: se creó el disco '%v'", m.path+"/"+m.name)
+	if mbr.WriteMbr(file) {
+		color.New(color.FgHiGreen, color.Bold).Printf("Mkdisk: se creó el disco '%v'\n", m.path+"/"+m.name)
+	} else {
+		color.New(color.FgHiRed, color.Bold).Println("Mkdisk fracasó")
 	}
 }
 
 //Verifica que cada carpeta del path exista. Si no existe la crea
-func (m Mkdisk) createFolders() bool {
-	if err := os.MkdirAll(m.path, os.ModePerm); err == nil {
+func (m *Mkdisk) createFolders() bool {
+	if err := os.MkdirAll(m.path, os.ModePerm); err != nil {
 		color.New(color.FgHiYellow).Printf("Mkdisk: no se pudo crear el directorio '%v'\n%v\n", m.path, err.Error())
 		return false
 	}
