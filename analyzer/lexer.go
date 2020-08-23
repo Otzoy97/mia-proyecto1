@@ -140,7 +140,7 @@ func (x *Lexer) Scanner() {
 				color.New(color.FgHiYellow).Printf("Caracter no reconocido %q (%v, %v)\n", c, x.Row, x.Col)
 			}
 		case 1:
-			if c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9' {
+			if c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9' || c == '_' || c == '.' {
 				stringRec += string(c)
 			} else {
 				if c != eof {
