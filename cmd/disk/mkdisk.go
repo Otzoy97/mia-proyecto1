@@ -30,7 +30,7 @@ func (m *Mkdisk) AddOp(key string, value interface{}) {
 //Validate ...
 func (m *Mkdisk) Validate() bool {
 	f := true
-	m.unit = 1000
+	m.unit = 1024
 	if !cmd.ValidateOptions(&m.Oplst, "path") {
 		color.New(color.FgHiYellow).Printf("Mkdisk: path no se encontró (%v)\n", m.Row)
 		f = false
@@ -65,9 +65,9 @@ func (m *Mkdisk) Validate() bool {
 		case "k":
 			m.unit = 1
 		case "m":
-			m.unit = 1000
+			m.unit = 1024
 		default:
-			color.New(color.FgHiYellow).Println("Mkdisk: unit deb ser 'k' o 'm'")
+			color.New(color.FgHiYellow).Printf("Mkdisk: unit debe ser 'k' o 'm' (%v)\n", m.Row)
 			f = false
 		}
 	}
@@ -99,7 +99,7 @@ func (m *Mkdisk) Run() {
 		return
 	}
 	bin := new(bytes.Buffer)
-	arrB := make([]byte, 1000*m.unit)
+	arrB := make([]byte, 1024*m.unit)
 	binary.Write(bin, binary.BigEndian, &arrB)
 	for i := 0; i < m.size; i++ {
 		file.Write(bin.Bytes())
