@@ -27,7 +27,7 @@ type Lexer struct {
 }
 
 var tokNames map[string]string = map[string]string{"mkdisk": "mkdisk",
-	//"rmdisk":          "rmdisk",
+	"rmdisk":          "rmdisk",
 	"fdisk":           "fdisk",
 	"mount":           "mount",
 	"unmount":         "unmount",

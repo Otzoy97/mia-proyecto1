@@ -36,6 +36,7 @@ var parserTable map[string]map[string]func(*[]interface{}) = map[string]map[stri
 		"mkdisk":   setState("Cmdlst"),
 		"pause":    setState("Cmdlst"),
 		"exec":     setState("Cmdlst"),
+		"rmdisk":   setState("Cmdlst"),
 		"$":        setState()},
 	"Cmdlst": map[string]func(*[]interface{}){
 		"mkfs":     setState("Cmdlst1", "Cmd"),
@@ -53,7 +54,8 @@ var parserTable map[string]map[string]func(*[]interface{}) = map[string]map[stri
 		"fdisk":    setState("Cmdlst1", "Cmd"),
 		"mkdisk":   setState("Cmdlst1", "Cmd"),
 		"pause":    setState("Cmdlst1", "Cmd"),
-		"exec":     setState("Cmdlst1", "Cmd")},
+		"exec":     setState("Cmdlst1", "Cmd"),
+		"rmdisk":   setState("Cmdlst1", "Cmd")},
 	"Cmdlst1": map[string]func(*[]interface{}){
 		"mkfs":     setState("Cmdlst1", "Cmd"),
 		"login":    setState("Cmdlst1", "Cmd"),
@@ -71,6 +73,7 @@ var parserTable map[string]map[string]func(*[]interface{}) = map[string]map[stri
 		"mkdisk":   setState("Cmdlst1", "Cmd"),
 		"pause":    setState("Cmdlst1", "Cmd"),
 		"exec":     setState("Cmdlst1", "Cmd"),
+		"rmdisk":   setState("Cmdlst1", "Cmd"),
 		"$":        setState()},
 	"Cmd": map[string]func(*[]interface{}){
 		"mkfs":     setState("Mkfs"),
@@ -88,7 +91,8 @@ var parserTable map[string]map[string]func(*[]interface{}) = map[string]map[stri
 		"fdisk":    setState("Fdisk"),
 		"mkdisk":   setState("Mkdisk"),
 		"pause":    setState("Pause"),
-		"exec":     setState("Exec")},
+		"exec":     setState("Exec"),
+		"rmdisk":   setState("Rmdisk")},
 	"Mkfs": map[string]func(*[]interface{}){
 		"mkfs": setState("Oplst", "mkfs")},
 	"Login": map[string]func(*[]interface{}){
@@ -117,6 +121,8 @@ var parserTable map[string]map[string]func(*[]interface{}) = map[string]map[stri
 		"fdisk": setState("Oplst", "fdisk")},
 	"Mkdisk": map[string]func(*[]interface{}){
 		"mkdisk": setState("Oplst", "mkdisk")},
+	"Rmdisk": map[string]func(*[]interface{}){
+		"rmdisk": setState("Oplst", "rmdisk")},
 	"Pause": map[string]func(*[]interface{}){
 		"pause": setState("pause")},
 	"Exec": map[string]func(*[]interface{}){
@@ -173,6 +179,7 @@ var parserTable map[string]map[string]func(*[]interface{}) = map[string]map[stri
 		"mkdisk":   setState(),
 		"pause":    setState(),
 		"exec":     setState(),
+		"rmdisk":   setState(),
 		"$":        setState()},
 	"Op": map[string]func(*[]interface{}){
 		"tipo": setState("cadena", "asignacion", "tipo"),
@@ -263,11 +270,14 @@ func (p *Parser) parserActions(s string, t int) {
 	case "Oplst1":
 	case "Exec":
 	case "Pause":
+		p.Cmdlst = append(p.Cmdlst, &cmd.Pause{})
 	case "Mkdisk":
 		p.Cmdlst = append(p.Cmdlst, &cmdisk.Mkdisk{Row: p.Lex.tokQueue[t].row, Oplst: map[string]interface{}{}})
 	case "Fdisk":
 	case "Mount":
 	case "Unmount":
+	case "Rmdisk":
+		p.Cmdlst = append(p.Cmdlst, &cmdisk.Rmdisk{Row: p.Lex.tokQueue[t].row, Oplst: map[string]interface{}{}})
 	case "Rep":
 	case "Recovery":
 	case "Loss":
