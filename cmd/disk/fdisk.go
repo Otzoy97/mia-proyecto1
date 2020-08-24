@@ -4,6 +4,7 @@ import (
 	"mia-proyecto1/cmd"
 	"mia-proyecto1/disk"
 	"os"
+	"sort"
 
 	"github.com/fatih/color"
 )
@@ -52,7 +53,7 @@ func (m *Fdisk) Validate() bool {
 				case "b":
 					m.unit = 1
 				default:
-					color.New(color.FgHiYellow).Println("Fdisk: unit debe ser 'b', 'k' o 'm' (%v)\n", m.Row)
+					color.New(color.FgHiYellow).Printf("Fdisk: unit debe ser 'b', 'k' o 'm' (%v)\n", m.Row)
 					f = false
 				}
 			}
@@ -106,7 +107,7 @@ func (m *Fdisk) Validate() bool {
 		}
 	}
 	if !f {
-		color.New(color.FgRed, color.Bold).Printf("Fdisk no se puede ejecutar (%v)\n", m.Row)
+		color.New(color.FgRed, color.Bold).Println("Fdisk no se puede ejecutar")
 		return false
 	}
 	return true
@@ -147,6 +148,101 @@ func (m *Fdisk) Run() {
 			//Eliminar mbr y limpiar espacio de partición
 		}
 	case 's':
-
+		if m.putPartition(&mbr) {
+			color.New(color.FgHiGreen, color.Bold).Printf("Fdisk: se creó la partición '%v' en el disco '%v' (%v)\n", m.name, m.path, m.Row)
+		} else {
+			color.New(color.FgHiYellow).Printf("Fdisk: no se pudo crear la partición '%v' en el disco '%v' (%v)\n", m.name, m.path, m.Row)
+			color.New(color.FgHiRed, color.Bold).Println("Fdisk fracasó")
+		}
 	}
+}
+
+//PutPartition coloca la particion con nombre partitionName de tamaño partitionSize
+//de tipo partitionType y con fit partitionFit. True si se logra colocar la partiticion, false si no
+func (m *Fdisk) putPartition(mbr *disk.Mbr) bool {
+	if m.typ == 'l' {
+		return false
+	}
+	return m.primaryPartition(mbr)
+}
+
+//primaryPartition coloca una partición primaria o extendida con los atributos especificados
+//Para colocar la partición se utiliza FirstFit
+func (m *Fdisk) primaryPartition(mbr *disk.Mbr) bool {
+	var arrPar []disk.Partition = []disk.Partition{}
+	//Esta bandera servirá para determinar si ya existe una partición extendida
+	var flag bool = false
+	if mbr.MbrPartition1.PartStatus == '1' {
+		arrPar = append(arrPar, mbr.MbrPartition1)
+		flag = (flag || mbr.MbrPartition1.PartType == 'e')
+	}
+	if mbr.MbrPartition2.PartStatus == '1' {
+		arrPar = append(arrPar, mbr.MbrPartition2)
+		flag = (flag || mbr.MbrPartition2.PartType == 'e')
+	}
+	if mbr.MbrPartition3.PartStatus == '1' {
+		arrPar = append(arrPar, mbr.MbrPartition3)
+		flag = (flag || mbr.MbrPartition3.PartType == 'e')
+	}
+	if mbr.MbrPartition4.PartStatus == '1' {
+		arrPar = append(arrPar, mbr.MbrPartition4)
+		flag = (flag || mbr.MbrPartition4.PartType == 'e')
+	}
+	//Si la partición a crear es extendida y flag es true, se rechaza la acción
+	if flag && m.typ == 'e' {
+		color.New(color.FgHiYellow).Printf("Fdisk: No es posible colocar más de 1 partición extendida (%v)\n", m.Row)
+		return false
+	}
+	//Si el arreglo es de 4 se rechaza la acción
+	if len(arrPar) >= 4 {
+		color.New(color.FgHiYellow).Printf("Fdisk: No hay espacio disponible para más particiones (%v)\n", m.Row)
+		return false
+	}
+	//Ordena los elementos utilizando el atributo PartStart
+	sort.Sort(disk.ByPartStart(arrPar))
+	var mPar map[uint32]uint32 = map[uint32]uint32{}
+	//Recorre todo el arreglo menos el último elemento
+	for i := 0; i < len(arrPar)-1; i++ {
+		par := arrPar[i]
+		mPar[par.PartStart+par.PartSize] = arrPar[i+1].PartStart - par.PartStart + par.PartSize - 1
+	}
+	//Calcula el byte de inicio y el tamaño disponible para el ultimo elemento
+	par := arrPar[len(arrPar)-1]
+	mPar[par.PartStart+par.PartSize] = mbr.MbrTamanio + par.PartStart + par.PartSize - 1
+	//Coloca la partición en la primera posición que quepa
+	for startByte, freeSpace := range mPar {
+		if freeSpace >= m.size {
+			if mbr.MbrPartition1.PartStatus == '0' {
+				copy(mbr.MbrPartition1.PartName[:], m.name)
+				mbr.MbrPartition1.PartFit = m.fit
+				mbr.MbrPartition1.PartSize = m.size
+				mbr.MbrPartition1.PartStart = startByte
+				mbr.MbrPartition1.PartStatus = '1'
+				mbr.MbrPartition1.PartType = m.typ
+			} else if mbr.MbrPartition2.PartStatus == '0' {
+				copy(mbr.MbrPartition2.PartName[:], m.name)
+				mbr.MbrPartition2.PartFit = m.fit
+				mbr.MbrPartition2.PartSize = m.size
+				mbr.MbrPartition2.PartStart = startByte
+				mbr.MbrPartition2.PartStatus = '1'
+				mbr.MbrPartition2.PartType = m.typ
+			} else if mbr.MbrPartition3.PartStatus == '0' {
+				copy(mbr.MbrPartition3.PartName[:], m.name)
+				mbr.MbrPartition3.PartFit = m.fit
+				mbr.MbrPartition3.PartSize = m.size
+				mbr.MbrPartition3.PartStart = startByte
+				mbr.MbrPartition3.PartStatus = '1'
+				mbr.MbrPartition3.PartType = m.typ
+			} else if mbr.MbrPartition4.PartStatus == '0' {
+				copy(mbr.MbrPartition4.PartName[:], m.name)
+				mbr.MbrPartition4.PartFit = m.fit
+				mbr.MbrPartition4.PartSize = m.size
+				mbr.MbrPartition4.PartStart = startByte
+				mbr.MbrPartition4.PartStatus = '1'
+				mbr.MbrPartition4.PartType = m.typ
+			}
+			break
+		}
+	}
+	return true
 }
