@@ -170,36 +170,21 @@ func (m *Fdisk) putPartition(mbr *disk.Mbr) bool {
 //primaryPartition coloca una partición primaria o extendida con los atributos especificados
 //Para colocar la partición se utiliza FirstFit
 func (m *Fdisk) primaryPartition(mbr *disk.Mbr) bool {
-	var arrPar []disk.Partition = []disk.Partition{}
-	//Esta bandera servirá para determinar si ya existe una partición extendida
-	var flag bool = false
-	if mbr.MbrPartition1.PartStatus == '1' {
-		arrPar = append(arrPar, mbr.MbrPartition1)
-		flag = (flag || mbr.MbrPartition1.PartType == 'e')
-	}
-	if mbr.MbrPartition2.PartStatus == '1' {
-		arrPar = append(arrPar, mbr.MbrPartition2)
-		flag = (flag || mbr.MbrPartition2.PartType == 'e')
-	}
-	if mbr.MbrPartition3.PartStatus == '1' {
-		arrPar = append(arrPar, mbr.MbrPartition3)
-		flag = (flag || mbr.MbrPartition3.PartType == 'e')
-	}
-	if mbr.MbrPartition4.PartStatus == '1' {
-		arrPar = append(arrPar, mbr.MbrPartition4)
-		flag = (flag || mbr.MbrPartition4.PartType == 'e')
-	}
-	if m.checkNames(&arrPar) {
+	//Recupera un array de particiones y si ya hay
+	//una partición extendida
+	arrPar, flag := cmd.CreateArrPart(mbr)
+	if cmd.CheckNames(&arrPar, m.name) {
+		color.New(color.FgHiYellow, color.Bold).Printf("Fdisk: nombre '%v' duplicado en '%v' (%v)\n", m.name, m.path, m.Row)
 		return false
 	}
 	//Si la partición a crear es extendida y flag es true, se rechaza la acción
 	if flag && m.typ == 'e' {
-		color.New(color.FgHiYellow).Printf("Fdisk: No es posible colocar más de 1 partición extendida (%v)\n", m.Row)
+		color.New(color.FgHiYellow).Printf("Fdisk: no es posible colocar más de 1 partición extendida (%v)\n", m.Row)
 		return false
 	}
 	//Si el arreglo es de 4 se rechaza la acción
 	if len(arrPar) >= 4 {
-		color.New(color.FgHiYellow).Printf("Fdisk: No hay espacio disponible para más particiones (%v)\n", m.Row)
+		color.New(color.FgHiYellow).Printf("Fdisk: no hay espacio disponible para más particiones (%v)\n", m.Row)
 		return false
 	}
 	//Ordena los elementos utilizando el atributo PartStart
@@ -256,20 +241,5 @@ func (m *Fdisk) primaryPartition(mbr *disk.Mbr) bool {
 	color.New(color.FgHiYellow).Printf("Fdisk: espacio insuficiente (%v)\n", m.Row)
 	return false
 Eureka:
-	return true
-}
-
-func (m *Fdisk) checkNames(arrPar *[]disk.Partition) bool {
-	//Verifica si el nombre ya existe
-	for _, p := range *arrPar {
-		byteName := string(p.PartName[:])
-		if byteName == m.name {
-			color.New(color.FgHiYellow).Printf("Fdisk: el nombre ya existe dentro del disco(%v)\n", m.Row)
-			return false
-		}
-		if p.PartType == 'e' {
-			//Si la partición es extendida verificará todas las particiones lógicas
-		}
-	}
 	return true
 }

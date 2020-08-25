@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"mia-proyecto1/disk"
+
 	"github.com/fatih/color"
 )
 
@@ -71,4 +73,45 @@ func ValidateOptions(m *map[string]interface{}, s string) bool {
 		return false
 	}
 	return false
+}
+
+//CreateArrPart crea una array de particiones con las particiones
+//que tienen status = 1, devuelve true si hay más de una particion
+//extendida
+func CreateArrPart(mbr *disk.Mbr) ([]disk.Partition, bool) {
+	flag := false
+	var arrPar []disk.Partition = []disk.Partition{}
+	if mbr.MbrPartition1.PartStatus == '1' {
+		arrPar = append(arrPar, mbr.MbrPartition1)
+		flag = (flag || mbr.MbrPartition1.PartType == 'e')
+	}
+	if mbr.MbrPartition2.PartStatus == '1' {
+		arrPar = append(arrPar, mbr.MbrPartition2)
+		flag = (flag || mbr.MbrPartition2.PartType == 'e')
+	}
+	if mbr.MbrPartition3.PartStatus == '1' {
+		arrPar = append(arrPar, mbr.MbrPartition3)
+		flag = (flag || mbr.MbrPartition3.PartType == 'e')
+	}
+	if mbr.MbrPartition4.PartStatus == '1' {
+		arrPar = append(arrPar, mbr.MbrPartition4)
+		flag = (flag || mbr.MbrPartition4.PartType == 'e')
+	}
+	return arrPar, flag
+}
+
+//CheckNames verifica si el nombre ya existe
+func CheckNames(arrPar *[]disk.Partition, name string) bool {
+	//Verifica si el nombre ya existe
+	for _, p := range *arrPar {
+		byteName := string(p.PartName[:])
+		if byteName == name {
+			//El nombre existe
+			return true
+		}
+		if p.PartType == 'e' {
+			//Si la partición es extendida verificará todas las particiones lógicas
+		}
+	}
+	return true
 }
