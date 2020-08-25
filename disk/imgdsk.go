@@ -92,6 +92,7 @@ NoReturn:
 }
 
 //RmImg busca y elimina el registro de la partición
+//Unmount utiliza esta función
 func RmImg(id string) bool {
 	//Verifica que el id tenga sentido
 	idLow := strings.ToLower(id)

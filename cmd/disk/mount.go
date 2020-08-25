@@ -49,7 +49,7 @@ func (m *Mount) Validate() bool {
 	return true
 }
 
-//Run ...
+//Run almacena el path de un disco y el name de una partición
 func (m *Mount) Run() {
 	switch m.exec {
 	case 'm':

@@ -20,7 +20,7 @@ func (m *Pause) Validate() bool {
 	return true
 }
 
-//Run ...
+//Run detiene la ejecución continua de comandos
 func (m *Pause) Run() {
 	fmt.Print("Presiona 'Enter' para continuar...")
 	bufio.NewReader(os.Stdin).ReadBytes('\n')

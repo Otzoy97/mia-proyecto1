@@ -78,7 +78,7 @@ func (m *Mkdisk) Validate() bool {
 	return true
 }
 
-//Run ...
+//Run crea un disco
 func (m *Mkdisk) Run() {
 	//Crea el directorio
 	if !m.createFolders() {

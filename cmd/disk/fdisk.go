@@ -114,7 +114,7 @@ func (m *Fdisk) Validate() bool {
 	return true
 }
 
-//Run ...
+//Run crea una nueva partición
 func (m *Fdisk) Run() {
 	//Crear una partición
 	//Verifica que el disco exista

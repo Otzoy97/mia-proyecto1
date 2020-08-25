@@ -32,7 +32,7 @@ func (m *Rmdisk) Validate() bool {
 	return true
 }
 
-//Run ...
+//Run elimina un disco
 func (m *Rmdisk) Run() {
 	//Verifica si el disco existe.
 	if _, err := os.Stat(m.path); err != nil {
