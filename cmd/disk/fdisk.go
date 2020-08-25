@@ -5,6 +5,7 @@ import (
 	"mia-proyecto1/disk"
 	"os"
 	"sort"
+	"unsafe"
 
 	"github.com/fatih/color"
 )
@@ -148,7 +149,7 @@ func (m *Fdisk) Run() {
 			//Eliminar mbr y limpiar espacio de partición
 		}
 	case 's':
-		if m.putPartition(&mbr) {
+		if m.putPartition(&mbr) && mbr.WriteMbr(file) {
 			color.New(color.FgHiGreen, color.Bold).Printf("Fdisk: se creó la partición '%v' en el disco '%v' (%v)\n", m.name, m.path, m.Row)
 		} else {
 			color.New(color.FgHiYellow).Printf("Fdisk: no se pudo crear la partición '%v' en el disco '%v' (%v)\n", m.name, m.path, m.Row)
@@ -188,6 +189,9 @@ func (m *Fdisk) primaryPartition(mbr *disk.Mbr) bool {
 		arrPar = append(arrPar, mbr.MbrPartition4)
 		flag = (flag || mbr.MbrPartition4.PartType == 'e')
 	}
+	if m.checkNames(&arrPar) {
+		return false
+	}
 	//Si la partición a crear es extendida y flag es true, se rechaza la acción
 	if flag && m.typ == 'e' {
 		color.New(color.FgHiYellow).Printf("Fdisk: No es posible colocar más de 1 partición extendida (%v)\n", m.Row)
@@ -204,11 +208,16 @@ func (m *Fdisk) primaryPartition(mbr *disk.Mbr) bool {
 	//Recorre todo el arreglo menos el último elemento
 	for i := 0; i < len(arrPar)-1; i++ {
 		par := arrPar[i]
-		mPar[par.PartStart+par.PartSize] = arrPar[i+1].PartStart - par.PartStart + par.PartSize - 1
+		mPar[par.PartStart+par.PartSize] = arrPar[i+1].PartStart - (par.PartStart + par.PartSize) - 1
 	}
-	//Calcula el byte de inicio y el tamaño disponible para el ultimo elemento
-	par := arrPar[len(arrPar)-1]
-	mPar[par.PartStart+par.PartSize] = mbr.MbrTamanio + par.PartStart + par.PartSize - 1
+	if len(arrPar) > 0 {
+		//Calcula el byte de inicio y el tamaño disponible para el ultimo elemento
+		par := arrPar[len(arrPar)-1]
+		mPar[par.PartStart+par.PartSize] = mbr.MbrTamanio - (par.PartStart + par.PartSize) - 1
+	} else {
+		//Si es la primera partición que se coloca
+		mPar[uint32(unsafe.Sizeof(mbr))] = mbr.MbrTamanio - uint32(unsafe.Sizeof(mbr))
+	}
 	//Coloca la partición en la primera posición que quepa
 	for startByte, freeSpace := range mPar {
 		if freeSpace >= m.size {
@@ -241,7 +250,25 @@ func (m *Fdisk) primaryPartition(mbr *disk.Mbr) bool {
 				mbr.MbrPartition4.PartStatus = '1'
 				mbr.MbrPartition4.PartType = m.typ
 			}
-			break
+			goto Eureka
+		}
+	}
+	color.New(color.FgHiYellow).Printf("Fdisk: espacio insuficiente (%v)\n", m.Row)
+	return false
+Eureka:
+	return true
+}
+
+func (m *Fdisk) checkNames(arrPar *[]disk.Partition) bool {
+	//Verifica si el nombre ya existe
+	for _, p := range *arrPar {
+		byteName := string(p.PartName[:])
+		if byteName == m.name {
+			color.New(color.FgHiYellow).Printf("Fdisk: el nombre ya existe dentro del disco(%v)\n", m.Row)
+			return false
+		}
+		if p.PartType == 'e' {
+			//Si la partición es extendida verificará todas las particiones lógicas
 		}
 	}
 	return true
