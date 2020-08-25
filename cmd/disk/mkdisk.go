@@ -107,7 +107,7 @@ func (m *Mkdisk) Run() {
 	if mbr.WriteMbr(file) {
 		color.New(color.FgHiGreen, color.Bold).Printf("Mkdisk: se creó el disco '%v' (%v)\n", m.path+"/"+m.name, m.Row)
 	} else {
-		color.New(color.FgHiRed, color.Bold).Printf("Mkdisk fracasó (%v)", m.Row)
+		color.New(color.FgHiRed, color.Bold).Printf("Mkdisk fracasó (%v)\n", m.Row)
 	}
 }
 
