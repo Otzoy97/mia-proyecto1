@@ -12,11 +12,12 @@ import (
 
 //Fdisk ...
 type Fdisk struct {
-	unit, size, Row uint32
-	path, name      string
-	typ, fit, del   byte
-	Oplst           map[string]interface{}
-	exec            byte
+	unit, size    uint32
+	Row           int
+	path, name    string
+	typ, fit, del byte
+	Oplst         map[string]interface{}
+	exec          byte
 }
 
 //AddOp ...
@@ -42,7 +43,7 @@ func (m *Fdisk) Validate() bool {
 			m.unit = 1000
 			m.fit = 'w'
 			m.typ = 'p'
-			m.size = m.Oplst["size"].(uint32)
+			m.size = uint32(m.Oplst["size"].(int))
 			m.exec = 's'
 			//Intenta recuperar elvalor de unit
 			if bUnit {
@@ -101,10 +102,14 @@ func (m *Fdisk) Validate() bool {
 		if !bPath {
 			color.New(color.FgHiYellow).Printf("Fdisk: path no se encontró (%v)\n", m.Row)
 			f = false
+		} else {
+			m.path = m.Oplst["path"].(string)
 		}
 		if !bName {
 			color.New(color.FgHiYellow).Printf("Fdisk: name no se encontró (%v)\n", m.Row)
 			f = false
+		} else {
+			m.name = m.Oplst["name"].(string)
 		}
 	}
 	if !f {
