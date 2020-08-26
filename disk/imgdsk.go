@@ -17,33 +17,7 @@ type Imgdsk struct {
 }
 
 //letters used
-var idxLetter map[byte]bool = map[byte]bool{
-	'a': false,
-	'b': false,
-	'c': false,
-	'd': false,
-	'e': false,
-	'f': false,
-	'g': false,
-	'h': false,
-	'i': false,
-	'j': false,
-	'k': false,
-	'l': false,
-	'm': false,
-	'n': false,
-	'o': false,
-	'p': false,
-	'q': false,
-	'r': false,
-	's': false,
-	't': false,
-	'u': false,
-	'v': false,
-	'w': false,
-	'x': false,
-	'y': false,
-	'z': false}
+var idxLetter [26]byte = [26]byte{}
 
 //mapa de imgdsk
 var imglst map[byte]Imgdsk = map[byte]Imgdsk{}
@@ -59,7 +33,7 @@ func AddImg(path, name string) (bool, string) {
 				//Si el nombre coincide
 				if dskName == name {
 					//Ya está montada
-					color.New(color.FgHiYellow).Printf("Mount: la particion '%v' del disco '%v' ya está montada\n", path, name)
+					color.New(color.FgHiYellow).Printf("Mount: la particion '%v' del disco '%v' ya está montada\n", name, path)
 					return false, ""
 				}
 			}
@@ -71,24 +45,25 @@ func AddImg(path, name string) (bool, string) {
 	}
 	//No existe el nombre
 	//Busca una letra disponible
-	var letter byte
-	for k, v := range idxLetter {
-		if !v {
-			letter = k
-			goto NoReturn
+	var letter byte = 'a'
+	for _, v := range idxLetter {
+		if v != letter {
+			break
 		}
+		letter++
 	}
-	//Ya no se pueden montar más particiones
-	color.New(color.FgHiYellow).Println("Mount: no se pueden montar más particiones")
-	return false, ""
-NoReturn:
+	if letter > 'z' {
+		//Ya no se pueden montar más particiones
+		color.New(color.FgHiYellow).Println("Mount: no se pueden montar más particiones")
+		return false, ""
+	}
 	//Actualiza idxLetter
-	idxLetter[letter] = true
+	idxLetter[97-letter] = letter
 	//Coloca el path y el name en el diccionari imglst
 	imglst[letter] = Imgdsk{path: path,
 		autID: 1,
 		parts: map[int]string{1: name}}
-	return true, "vd" + string(letter) + string(1)
+	return true, "vd" + string(letter) + "1"
 }
 
 //RmImg busca y elimina el registro de la partición
@@ -101,21 +76,21 @@ func RmImg(id string) bool {
 		return false
 	}
 	//Recupera la letra y el numero
-	idLetter := []byte(idLow[2:3])
+	idLetter := []byte(idLow[2:3])[0]
 	idIdx, _ := strconv.Atoi(idLow[3:len(idLow)])
 	//Busca en los diccionarios con las respectivas id
-	if path, pExist := imglst[idLetter[0]]; pExist {
+	if path, pExist := imglst[idLetter]; pExist {
 		//Busca el número
 		if _, nExist := path.parts[idIdx]; nExist {
 			//Elimina el registro
 			delete(path.parts, idIdx)
 			//Si ya no hay más regitros en parts, elimina el struct
 			if len(path.parts) == 0 {
-				delete(imglst, idLetter[0])
+				delete(imglst, idLetter)
 				//Actualiza las letras usadas
-				idxLetter[idLetter[0]] = false
+				idxLetter[97-idLetter] = 0
 			}
-			color.New(color.FgHiGreen, color.Bold).Printf("Unmount: se ha desmontado '%v'", id)
+			color.New(color.FgHiGreen, color.Bold).Printf("Unmount: se ha desmontado '%v'\n", id)
 			return true
 		}
 	}
@@ -132,7 +107,7 @@ func ListImg() {
 	//Recorre el mapa y lista el nombre
 	for letter, part := range imglst {
 		for idx, name := range part.parts {
-			str := "vd" + string(letter) + string(idx)
+			str := "vd" + string(letter) + strconv.Itoa(idx)
 			tbl.AddRow(str, part.path, name)
 		}
 	}
