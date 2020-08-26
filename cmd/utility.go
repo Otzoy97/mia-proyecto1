@@ -81,19 +81,19 @@ func ValidateOptions(m *map[string]interface{}, s string) bool {
 func CreateArrPart(mbr *disk.Mbr) ([]disk.Partition, bool) {
 	flag := false
 	var arrPar []disk.Partition = []disk.Partition{}
-	if mbr.MbrPartition1.PartStatus == '1' {
+	if mbr.MbrPartition1.PartStatus == 1 {
 		arrPar = append(arrPar, mbr.MbrPartition1)
 		flag = (flag || mbr.MbrPartition1.PartType == 'e')
 	}
-	if mbr.MbrPartition2.PartStatus == '1' {
+	if mbr.MbrPartition2.PartStatus == 1 {
 		arrPar = append(arrPar, mbr.MbrPartition2)
 		flag = (flag || mbr.MbrPartition2.PartType == 'e')
 	}
-	if mbr.MbrPartition3.PartStatus == '1' {
+	if mbr.MbrPartition3.PartStatus == 1 {
 		arrPar = append(arrPar, mbr.MbrPartition3)
 		flag = (flag || mbr.MbrPartition3.PartType == 'e')
 	}
-	if mbr.MbrPartition4.PartStatus == '1' {
+	if mbr.MbrPartition4.PartStatus == 1 {
 		arrPar = append(arrPar, mbr.MbrPartition4)
 		flag = (flag || mbr.MbrPartition4.PartType == 'e')
 	}
@@ -104,8 +104,9 @@ func CreateArrPart(mbr *disk.Mbr) ([]disk.Partition, bool) {
 func CheckNames(arrPar *[]disk.Partition, name string) bool {
 	//Verifica si el nombre ya existe
 	for _, p := range *arrPar {
-		byteName := string(p.PartName[:])
-		if byteName == name {
+		byteName := [16]byte{}
+		copy(byteName[:], name)
+		if byteName == p.PartName {
 			//El nombre existe
 			return true
 		}
@@ -113,5 +114,6 @@ func CheckNames(arrPar *[]disk.Partition, name string) bool {
 			//Si la partición es extendida verificará todas las particiones lógicas
 		}
 	}
-	return true
+	//No exsite el nombre
+	return false
 }

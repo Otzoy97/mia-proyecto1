@@ -40,18 +40,17 @@ func (m *Fdisk) Validate() bool {
 			bUnit := cmd.ValidateOptions(&m.Oplst, "unit")
 			bType := cmd.ValidateOptions(&m.Oplst, "type")
 			bFit := cmd.ValidateOptions(&m.Oplst, "fit")
-			m.unit = 1000
+			m.unit = 1024
 			m.fit = 'w'
 			m.typ = 'p'
-			m.size = uint32(m.Oplst["size"].(int))
 			m.exec = 's'
 			//Intenta recuperar elvalor de unit
 			if bUnit {
 				switch m.Oplst["unit"].(string) {
 				case "k":
-					m.unit = 1000
+					m.unit = 1024
 				case "m":
-					m.unit = 1000000
+					m.unit = 1024 * 1024
 				case "b":
 					m.unit = 1
 				default:
@@ -87,6 +86,8 @@ func (m *Fdisk) Validate() bool {
 					f = false
 				}
 			}
+			//guarda el tamaño
+			m.size = uint32(m.Oplst["size"].(int)) * m.unit
 		} else if bDel {
 			switch m.Oplst["delete"].(string) {
 			case "fast":
@@ -130,6 +131,7 @@ func (m *Fdisk) Run() {
 	}
 	//Abre el disco
 	file, err := os.OpenFile(m.path, os.O_RDWR, 0777)
+	defer file.Close()
 	if err != nil {
 		//No se pudo abrir el disco
 		color.New(color.FgHiYellow).Printf("Fdisk: no se pudo recuperar el disco '%v' (%v)\n", m.path, m.Row)
@@ -206,38 +208,38 @@ func (m *Fdisk) primaryPartition(mbr *disk.Mbr) bool {
 		mPar[par.PartStart+par.PartSize] = mbr.MbrTamanio - (par.PartStart + par.PartSize) - 1
 	} else {
 		//Si es la primera partición que se coloca
-		mPar[uint32(unsafe.Sizeof(mbr))] = mbr.MbrTamanio - uint32(unsafe.Sizeof(mbr))
+		mPar[uint32(unsafe.Sizeof(*mbr))] = mbr.MbrTamanio - uint32(unsafe.Sizeof(*mbr))
 	}
 	//Coloca la partición en la primera posición que quepa
 	for startByte, freeSpace := range mPar {
 		if freeSpace >= m.size {
-			if mbr.MbrPartition1.PartStatus == '0' {
+			if mbr.MbrPartition1.PartStatus == 0 {
 				copy(mbr.MbrPartition1.PartName[:], m.name)
 				mbr.MbrPartition1.PartFit = m.fit
 				mbr.MbrPartition1.PartSize = m.size
 				mbr.MbrPartition1.PartStart = startByte
-				mbr.MbrPartition1.PartStatus = '1'
+				mbr.MbrPartition1.PartStatus = 1
 				mbr.MbrPartition1.PartType = m.typ
-			} else if mbr.MbrPartition2.PartStatus == '0' {
+			} else if mbr.MbrPartition2.PartStatus == 0 {
 				copy(mbr.MbrPartition2.PartName[:], m.name)
 				mbr.MbrPartition2.PartFit = m.fit
 				mbr.MbrPartition2.PartSize = m.size
 				mbr.MbrPartition2.PartStart = startByte
-				mbr.MbrPartition2.PartStatus = '1'
+				mbr.MbrPartition2.PartStatus = 1
 				mbr.MbrPartition2.PartType = m.typ
-			} else if mbr.MbrPartition3.PartStatus == '0' {
+			} else if mbr.MbrPartition3.PartStatus == 0 {
 				copy(mbr.MbrPartition3.PartName[:], m.name)
 				mbr.MbrPartition3.PartFit = m.fit
 				mbr.MbrPartition3.PartSize = m.size
 				mbr.MbrPartition3.PartStart = startByte
-				mbr.MbrPartition3.PartStatus = '1'
+				mbr.MbrPartition3.PartStatus = 1
 				mbr.MbrPartition3.PartType = m.typ
-			} else if mbr.MbrPartition4.PartStatus == '0' {
+			} else if mbr.MbrPartition4.PartStatus == 0 {
 				copy(mbr.MbrPartition4.PartName[:], m.name)
 				mbr.MbrPartition4.PartFit = m.fit
 				mbr.MbrPartition4.PartSize = m.size
 				mbr.MbrPartition4.PartStart = startByte
-				mbr.MbrPartition4.PartStatus = '1'
+				mbr.MbrPartition4.PartStatus = 1
 				mbr.MbrPartition4.PartType = m.typ
 			}
 			goto Eureka

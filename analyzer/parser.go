@@ -116,7 +116,7 @@ var parserTable map[string]map[string]func(*[]interface{}) = map[string]map[stri
 	"Unmount": map[string]func(*[]interface{}){
 		"unmount": setState("Oplst", "unmount")},
 	"Mount": map[string]func(*[]interface{}){
-		"mount": setState("Oplst", "mount")},
+		"mount": setState("Oplst1", "mount")},
 	"Fdisk": map[string]func(*[]interface{}){
 		"fdisk": setState("Oplst", "fdisk")},
 	"Mkdisk": map[string]func(*[]interface{}){

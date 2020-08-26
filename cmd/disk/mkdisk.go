@@ -86,7 +86,7 @@ func (m *Mkdisk) Run() {
 		return
 	}
 	//Crea el mbr
-	mbr := disk.Mbr{MbrTamanio: uint32(m.size * m.unit * 1000), MbrDiskSignature: uint32(rand.Intn(10000000))}
+	mbr := disk.Mbr{MbrTamanio: uint32(m.size * m.unit * 1024), MbrDiskSignature: uint32(rand.Intn(10000000))}
 	//Guarda la fecha/hora
 	tDec, _ := time.Now().GobEncode()
 	copy(mbr.MbrFechaCreacion[:], tDec)

@@ -1,6 +1,7 @@
 package cmdisk
 
 import (
+	"fmt"
 	"mia-proyecto1/cmd"
 	"mia-proyecto1/disk"
 	"os"
@@ -56,12 +57,14 @@ func (m *Mount) Run() {
 		//Verifica que la partición exista
 		//Verifica el disco
 		if _, err := os.Stat(m.path); err != nil {
+			fmt.Println(err.Error())
 			color.New(color.FgHiYellow).Printf("Mount: el disco '%v' no existe o no se puede abrir (%v)\n", m.path, m.Row)
 			color.New(color.FgHiRed, color.Bold).Println("Mount fracasó")
 			return
 		}
 		//Abre el disco y verifica los nombres de particiones
 		file, err := os.Open(m.path)
+		defer file.Close()
 		if err != nil {
 			color.New(color.FgHiYellow).Printf("Mount: no se puede abrir el disco '%v' (%v)\n", m.path, m.Row)
 			color.New(color.FgHiRed, color.Bold).Println("Mount fracasó")
