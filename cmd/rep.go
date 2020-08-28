@@ -106,7 +106,7 @@ func (m *Rep) Run() {
 		strD.WriteString("<td>mbr_fecha_creacion</td>\n")
 		var tm time.Time
 		tm.GobDecode(mbr.MbrFechaCreacion[:])
-		strD.WriteString("<td>" + tm.Format("01/01/2006 03:04") + "</td>\n")
+		strD.WriteString("<td>" + tm.Format("02 Jan 2006 03:04:05 PM") + "</td>\n")
 		strD.WriteString("</tr>\n")
 		//----
 		strD.WriteString("<tr>\n")
@@ -121,8 +121,8 @@ func (m *Rep) Run() {
 		for i, par := range pArr {
 			strD.WriteString("<tr>")
 			strD.WriteString("<td>part_name_" + fmt.Sprint(i+1) + "</td>")
-			temName := par.PartName[:bytes.IndexByte(par.PartName[:], 0)]
-			if len(temName) > 0 {
+			if par.PartStatus == 1 {
+				temName := par.PartName[:bytes.IndexByte(par.PartName[:], 0)]
 				strD.WriteString("<td>" + string(temName) + "</td>")
 			} else {
 				strD.WriteString("<td></td>")
@@ -134,11 +134,19 @@ func (m *Rep) Run() {
 			strD.WriteString("</tr>\n")
 			strD.WriteString("<tr>")
 			strD.WriteString("<td>part_type_" + fmt.Sprint(i+1) + "</td>")
-			strD.WriteString("<td>" + string(par.PartType) + "</td>")
+			if par.PartStatus == 1 {
+				strD.WriteString("<td>" + string(par.PartType) + "</td>")
+			} else {
+				strD.WriteString("<td></td>")
+			}
 			strD.WriteString("</tr>\n")
 			strD.WriteString("<tr>")
 			strD.WriteString("<td>part_fit_" + fmt.Sprint(i+1) + "</td>")
-			strD.WriteString("<td>" + string(par.PartFit) + "</td>")
+			if par.PartStatus == 1 {
+				strD.WriteString("<td>" + string(par.PartFit) + "</td>")
+			} else {
+				strD.WriteString("<td></td>")
+			}
 			strD.WriteString("</tr>\n")
 			strD.WriteString("<tr>")
 			strD.WriteString("<td>part_start_" + fmt.Sprint(i+1) + "</td>")
