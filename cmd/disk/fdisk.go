@@ -87,7 +87,12 @@ func (m *Fdisk) Validate() bool {
 				}
 			}
 			//guarda el tamaño
-			m.size = uint32(m.Oplst["size"].(int)) * m.unit
+			if m.Oplst["size"].(int) < 0 {
+				color.New(color.FgHiYellow).Printf("Fdisk: size debe ser mayor a 0 (%v)\n", m.Row)
+				f = false
+			} else {
+				m.size = uint32(m.Oplst["size"].(int)) * m.unit
+			}
 		} else if bDel {
 			switch m.Oplst["delete"].(string) {
 			case "fast":
@@ -196,49 +201,58 @@ func (m *Fdisk) primaryPartition(mbr *disk.Mbr) bool {
 	}
 	//Ordena los elementos utilizando el atributo PartStart
 	sort.Sort(disk.ByPartStart(arrPar))
-	var mPar map[uint32]uint32 = map[uint32]uint32{}
+	var mPar map[int]int = map[int]int{}
 	//Recorre todo el arreglo menos el último elemento
 	for i := 0; i < len(arrPar)-1; i++ {
 		par := arrPar[i]
-		mPar[par.PartStart+par.PartSize] = arrPar[i+1].PartStart - (par.PartStart + par.PartSize) - 1
+		mPar[int(par.PartStart+par.PartSize)] = int(arrPar[i+1].PartStart) - int(par.PartStart+par.PartSize) - 1
 	}
 	if len(arrPar) > 0 {
 		//Calcula el byte de inicio y el tamaño disponible para el ultimo elemento
 		par := arrPar[len(arrPar)-1]
-		mPar[par.PartStart+par.PartSize] = mbr.MbrTamanio - (par.PartStart + par.PartSize) - 1
+		mPar[int(par.PartStart+par.PartSize)] = int(mbr.MbrTamanio) - int(par.PartStart+par.PartSize) - 1
 	} else {
 		//Si es la primera partición que se coloca
-		mPar[uint32(unsafe.Sizeof(*mbr))] = mbr.MbrTamanio - uint32(unsafe.Sizeof(*mbr))
+		mPar[int(unsafe.Sizeof(*mbr))] = int(mbr.MbrTamanio) - int(unsafe.Sizeof(*mbr))
 	}
+	//Arreglo para almacenar las llaves
+	keysArr := make([]int, len(mPar))
+	i := 0
+	for k := range mPar {
+		keysArr[i] = int(k)
+		i++
+	}
+	sort.Ints(keysArr)
 	//Coloca la partición en la primera posición que quepa
-	for startByte, freeSpace := range mPar {
-		if freeSpace >= m.size {
+	for _, startByte := range keysArr {
+		freeSpace := mPar[startByte]
+		if freeSpace >= int(m.size) {
 			if mbr.MbrPartition1.PartStatus == 0 {
 				copy(mbr.MbrPartition1.PartName[:], m.name)
 				mbr.MbrPartition1.PartFit = m.fit
 				mbr.MbrPartition1.PartSize = m.size
-				mbr.MbrPartition1.PartStart = startByte
+				mbr.MbrPartition1.PartStart = uint32(startByte)
 				mbr.MbrPartition1.PartStatus = 1
 				mbr.MbrPartition1.PartType = m.typ
 			} else if mbr.MbrPartition2.PartStatus == 0 {
 				copy(mbr.MbrPartition2.PartName[:], m.name)
 				mbr.MbrPartition2.PartFit = m.fit
 				mbr.MbrPartition2.PartSize = m.size
-				mbr.MbrPartition2.PartStart = startByte
+				mbr.MbrPartition2.PartStart = uint32(startByte)
 				mbr.MbrPartition2.PartStatus = 1
 				mbr.MbrPartition2.PartType = m.typ
 			} else if mbr.MbrPartition3.PartStatus == 0 {
 				copy(mbr.MbrPartition3.PartName[:], m.name)
 				mbr.MbrPartition3.PartFit = m.fit
 				mbr.MbrPartition3.PartSize = m.size
-				mbr.MbrPartition3.PartStart = startByte
+				mbr.MbrPartition3.PartStart = uint32(startByte)
 				mbr.MbrPartition3.PartStatus = 1
 				mbr.MbrPartition3.PartType = m.typ
 			} else if mbr.MbrPartition4.PartStatus == 0 {
 				copy(mbr.MbrPartition4.PartName[:], m.name)
 				mbr.MbrPartition4.PartFit = m.fit
 				mbr.MbrPartition4.PartSize = m.size
-				mbr.MbrPartition4.PartStart = startByte
+				mbr.MbrPartition4.PartStart = uint32(startByte)
 				mbr.MbrPartition4.PartStatus = 1
 				mbr.MbrPartition4.PartType = m.typ
 			}
