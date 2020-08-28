@@ -10,7 +10,8 @@ import (
 )
 
 func main() {
-	//line := []byte("mkdisk -path->/home/usr\n")
+	// line := []byte("mkdisk -path->/home/sorem/aeamanito -name->disco1.dsk -size->5\n")
+	// line := []byte("fdisk -path->/home/sorem/aeamanito/disco1.dsk -name->part4 -size->3 -unit->m\n")
 	in := bufio.NewReader(os.Stdin)
 	auxLine := []byte{}
 	aux := ""
@@ -40,7 +41,9 @@ func main() {
 		lex.Scanner()
 		par.Parser()
 		for i := 0; i < len(par.Cmdlst); i++ {
-			par.Cmdlst[i].Run()
+			if par.Cmdlst[i].Validate() {
+				par.Cmdlst[i].Run()
+			}
 		}
 		//Reinicia auxLine
 		auxLine = nil
