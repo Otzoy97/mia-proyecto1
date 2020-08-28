@@ -282,6 +282,7 @@ func (p *Parser) parserActions(s string, t int) {
 	case "Rmdisk":
 		p.Cmdlst = append(p.Cmdlst, &cmdisk.Rmdisk{Row: p.Lex.tokQueue[t].row, Oplst: map[string]interface{}{}})
 	case "Rep":
+		p.Cmdlst = append(p.Cmdlst, &cmd.Rep{Row: p.Lex.tokQueue[t].row, Oplst: map[string]interface{}{}})
 	case "Recovery":
 	case "Loss":
 	case "Mkdir":
