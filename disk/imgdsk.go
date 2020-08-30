@@ -137,3 +137,22 @@ func FindImg(id string) (string, string) {
 	color.New(color.FgHiYellow).Printf("	El id '%v' no existe\n'", id)
 	return "", ""
 }
+
+//CheckIfMounted recorre las particiones montadas y verifica con el path y el name si ya está montada
+func CheckIfMounted(path, name string) bool {
+	//Verifica si la partición está montada
+	for _, value := range imglst {
+		//Si el path es el mismo
+		if value.path == path {
+			//Recorre los nombres
+			for _, dskName := range value.parts {
+				//Si el nombre conincide
+				if dskName == name {
+					//Está montada
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
