@@ -47,5 +47,7 @@ func main() {
 		}
 		//Reinicia auxLine
 		auxLine = nil
+		lex.Row = 0
+		lex.Col = 0
 	}
 }
