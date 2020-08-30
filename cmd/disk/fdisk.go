@@ -1,10 +1,14 @@
 package cmdisk
 
 import (
+	"bufio"
+	"bytes"
+	"encoding/binary"
 	"mia-proyecto1/cmd"
 	"mia-proyecto1/disk"
 	"os"
 	"sort"
+	"strings"
 	"unsafe"
 
 	"github.com/fatih/color"
@@ -154,11 +158,78 @@ func (m *Fdisk) Run() {
 	switch m.exec {
 	case 'd':
 		//Eliminar una partición
-		switch m.del {
-		case 'a':
-			//Eliminar mbr
-		case 'u':
-			//Eliminar mbr y limpiar espacio de partición
+		//Busca el nombre de la partición
+		parArr, _ := cmd.CreateArrPart(&mbr)
+		if !cmd.CheckNames(&parArr, m.name) {
+			color.New(color.FgHiYellow).Printf("Fdisk: '%v' no existe, no se puede eliminar (%v)\n", m.name, m.Row)
+			color.New(color.FgHiRed, color.Bold).Println("Fdisk fracasó")
+			return
+		}
+		//Verifica si la partición está montada
+		if disk.CheckIfMounted(m.path, m.name) {
+			color.New(color.FgHiYellow).Printf("Fdisk: la partición '%v' está montada, no se puede borrar (%v)\n", m.name, m.Row)
+			color.New(color.FgHiRed, color.Bold).Println("Fdisk fracasó")
+			return
+		}
+		//Almacena el nombre de la partición
+		namePart := [16]byte{}
+		copy(namePart[:], m.name)
+		//Solicita confirmación para eliminar el disco
+		in := bufio.NewReader(os.Stdin)
+	ReEntry:
+		color.New(color.FgHiBlue).Printf("¿Desea eliminar la partición '%v' del disco '%v'? [s/n] ", m.name, m.path)
+		txt, err := in.ReadString('\n')
+		if err != nil {
+			color.New(color.FgHiYellow).Println("Error al leer la entrada del usuario.")
+			color.New(color.FgHiRed, color.Bold).Println("Fdisk fracasó")
+			return
+		}
+		//Se asegura que la entrada sea /s/ o /n/
+		txt = strings.ToLower(strings.TrimSpace(txt))
+		if txt != "s" && txt != "n" {
+			goto ReEntry
+		}
+		if txt == "n" {
+			color.New(color.FgHiBlue, color.Bold).Printf("Fdisk: la partición '%v' del disco '%v' no se eliminó (%v)\n", m.name, m.path, m.Row)
+			return
+		}
+		//Limpiar espacio de partición
+		if m.del == 'u' {
+			//Determina el inicio y el final de la partición
+			for _, par := range parArr {
+				if par.PartName == namePart {
+					if _, err := file.Seek(0, int(par.PartStart)); err != nil {
+						color.New(color.FgHiYellow).Printf("Fdisk: ocurrió un error al manipular el disco '%v' (%v)\n%v\n", m.path, m.Row, err.Error())
+						color.New(color.FgHiRed, color.Bold).Println("Fdisk fracasó")
+						return
+					}
+					byteToWrite := make([]byte, par.PartSize)
+					bin := new(bytes.Buffer)
+					binary.Write(bin, binary.BigEndian, &byteToWrite)
+					if _, err := file.Write(bin.Bytes()); err != nil {
+						color.New(color.FgHiYellow).Printf("Fdisk: ocurrió un error al borrar la partición '%v' del disco '%v' (%v)\n%v\n", m.name, m.path, m.Row, err.Error())
+						color.New(color.FgHiRed, color.Bold).Println("Fdisk fracasó")
+						return
+					}
+				}
+			}
+		}
+		//Elimina el mbr
+		if mbr.MbrPartition1.PartName == namePart {
+			mbr.MbrPartition1 = disk.Partition{}
+		} else if mbr.MbrPartition2.PartName == namePart {
+			mbr.MbrPartition2 = disk.Partition{}
+		} else if mbr.MbrPartition3.PartName == namePart {
+			mbr.MbrPartition3 = disk.Partition{}
+		} else if mbr.MbrPartition4.PartName == namePart {
+			mbr.MbrPartition4 = disk.Partition{}
+		}
+		//Escribe el mbr
+		if mbr.WriteMbr(file) {
+			color.New(color.FgHiGreen, color.Bold).Printf("Fdisk: se eliminó la partición '%v' en el disco '%v' (%v)\n", m.name, m.path, m.Row)
+		} else {
+			color.New(color.FgHiYellow).Printf("Fdisk: no se pudo eliminar la partición '%v' del disco '%v' (%v)\n", m.name, m.path, m.Row)
+			color.New(color.FgHiRed, color.Bold).Println("Fdisk fracasó")
 		}
 	case 's':
 		if m.putPartition(&mbr) && mbr.WriteMbr(file) {
