@@ -58,7 +58,7 @@ func AddImg(path, name string) (bool, string) {
 		return false, ""
 	}
 	//Actualiza idxLetter
-	idxLetter[97-letter] = letter
+	idxLetter[letter-97] = letter
 	//Coloca el path y el name en el diccionari imglst
 	imglst[letter] = Imgdsk{path: path,
 		autID: 1,
