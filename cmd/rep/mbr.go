@@ -13,7 +13,7 @@ func (m *Rep) CreateMBR(mbr *disk.Mbr) []byte {
 	var strD strings.Builder
 	strD.WriteString("digraph G {\n")
 	strD.WriteString("graph [pad=\"0.5\", nodesep=\"0.5\", ranksep=\"2\"]\n")
-	strD.WriteString("node [shape=plain]\n")
+	strD.WriteString("node [shape=plain fontname=\"Arial\"]\n")
 	strD.WriteString("rankdir = LR\n")
 	strD.WriteString("mbr[\n")
 	strD.WriteString("shape=plaintext \n")
@@ -21,8 +21,8 @@ func (m *Rep) CreateMBR(mbr *disk.Mbr) []byte {
 	strD.WriteString("label=<\n")
 	strD.WriteString("<table border='1' color='black' cellspacing='0' cellborder='1'>\n")
 	strD.WriteString("<th>\n")
-	strD.WriteString("<td>Nombre</td>\n")
-	strD.WriteString("<td>Valor</td>\n")
+	strD.WriteString("<td bgcolor=\"#4e89ae\"><b>Nombre</b></td>\n")
+	strD.WriteString("<td bgcolor=\"#4e89ae\"><b>Valor</b></td>\n")
 	strD.WriteString("</th>\n")
 	//----
 	strD.WriteString("<tr>\n")
