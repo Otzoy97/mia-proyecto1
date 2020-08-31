@@ -11,7 +11,7 @@ import (
 
 func main() {
 	// line := []byte("mkdisk -path->/home/sorem/aeamanito -name->disco1.dsk -size->5\n")
-	// line := []byte("fdisk -path->/home/sorem/aeamanito/disco1.dsk -name->part4 -size->3 -unit->m\n")
+	// line := []byte("exec -path->/home/sorem/cmdexec\n")
 	in := bufio.NewReader(os.Stdin)
 	auxLine := []byte{}
 	aux := ""

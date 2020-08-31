@@ -270,6 +270,7 @@ func (p *Parser) parserActions(s string, t int) {
 	case "Oplst":
 	case "Oplst1":
 	case "Exec":
+		p.Cmdlst = append(p.Cmdlst, &Exec{Row: p.Lex.tokQueue[t].row})
 	case "Pause":
 		p.Cmdlst = append(p.Cmdlst, &cmd.Pause{})
 	case "Mkdisk":
