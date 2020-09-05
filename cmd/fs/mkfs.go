@@ -10,7 +10,7 @@ type Mkfs struct {
 func (m *Mkfs) AddOp(s string, v interface{}) {
 	if s == "id" {
 		m.id = v.(string)
-	} else if s == "tipo" {
+	} else if s == "type" {
 		m.tipo = v.(byte)
 	}
 }
