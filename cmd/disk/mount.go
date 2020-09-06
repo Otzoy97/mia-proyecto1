@@ -73,7 +73,7 @@ func (m *Mount) Run() {
 		//Recupera el mbr
 		mbr := disk.Mbr{}
 		mbr.ReadMbr(file)
-		arr, _ := cmd.CreateArrPart(&mbr)
+		arr, _ := mbr.CreateArrPart()
 		//Si el arreglo es < 0, no hay nada que montar
 		if len(arr) == 0 {
 			color.New(color.FgHiYellow).Printf("Mount: no hay particiones en el disco '%v' (%v)\n", m.path, m.Row)
@@ -81,7 +81,7 @@ func (m *Mount) Run() {
 			return
 		}
 		//Verifica que el nombre exista
-		if !cmd.CheckNames(&arr, m.name) {
+		if !arr.Check(m.name) {
 			color.New(color.FgHiYellow).Printf("Mount: '%v' no existe en el disco '%v' (%v)\n", m.name, m.path, m.Row)
 			color.New(color.FgHiRed, color.Bold).Println("Mount fracasó")
 			return

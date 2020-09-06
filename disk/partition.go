@@ -30,7 +30,7 @@ func (a *ByPartStart) Find(name string) (Partition, bool) {
 	return Partition{}, false
 }
 
-//CheckNames verifica si el nombre ya existe
+//Check verifica si el nombre ya existe
 func (a *ByPartStart) Check(name string) bool {
 	//Verifica si el nombre ya existe
 	for _, p := range *a {

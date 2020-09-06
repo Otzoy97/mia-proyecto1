@@ -159,8 +159,8 @@ func (m *Fdisk) Run() {
 	case 'd':
 		//Eliminar una partición
 		//Busca el nombre de la partición
-		parArr, _ := cmd.CreateArrPart(&mbr)
-		if !cmd.CheckNames(&parArr, m.name) {
+		parArr, _ := mbr.CreateArrPart()
+		if !parArr.Check(m.name) {
 			color.New(color.FgHiYellow).Printf("Fdisk: '%v' no existe, no se puede eliminar (%v)\n", m.name, m.Row)
 			color.New(color.FgHiRed, color.Bold).Println("Fdisk fracasó")
 			return
@@ -255,8 +255,8 @@ func (m *Fdisk) putPartition(mbr *disk.Mbr) bool {
 func (m *Fdisk) primaryPartition(mbr *disk.Mbr) bool {
 	//Recupera un array de particiones y si ya hay
 	//una partición extendida
-	arrPar, flag := cmd.CreateArrPart(mbr)
-	if cmd.CheckNames(&arrPar, m.name) {
+	arrPar, flag := mbr.CreateArrPart()
+	if arrPar.Check(m.name) {
 		color.New(color.FgHiYellow, color.Bold).Printf("Fdisk: nombre '%v' duplicado en '%v' (%v)\n", m.name, m.path, m.Row)
 		return false
 	}
