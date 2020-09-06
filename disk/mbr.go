@@ -33,6 +33,7 @@ func (m *Mbr) WriteMbr(f *os.File) bool {
 
 //ReadMbr lee el mbr del archivo f
 func (m *Mbr) ReadMbr(f *os.File) bool {
+	//Crea un arreglo de byes del tamaño del struct del mbr
 	dArr := make([]byte, int(unsafe.Sizeof(*m)))
 	if _, err := f.Read(dArr); err != nil {
 		color.New(color.FgHiYellow).Printf("No se pudo recuperar el mbr %v\n", f.Name())
@@ -44,4 +45,29 @@ func (m *Mbr) ReadMbr(f *os.File) bool {
 		return false
 	}
 	return true
+}
+
+//CreateArrPart crea una array de particiones con las particiones
+//que tienen status = 1, devuelve true si hay más de una particion
+//extendida
+func (m *Mbr) CreateArrPart() (ByPartStart, bool) {
+	flag := false
+	var arrPar ByPartStart = []Partition{}
+	if m.MbrPartition1.PartStatus == 1 {
+		arrPar = append(arrPar, m.MbrPartition1)
+		flag = (flag || m.MbrPartition1.PartType == 'e')
+	}
+	if m.MbrPartition2.PartStatus == 1 {
+		arrPar = append(arrPar, m.MbrPartition2)
+		flag = (flag || m.MbrPartition2.PartType == 'e')
+	}
+	if m.MbrPartition3.PartStatus == 1 {
+		arrPar = append(arrPar, m.MbrPartition3)
+		flag = (flag || m.MbrPartition3.PartType == 'e')
+	}
+	if m.MbrPartition4.PartStatus == 1 {
+		arrPar = append(arrPar, m.MbrPartition4)
+		flag = (flag || m.MbrPartition4.PartType == 'e')
+	}
+	return arrPar, flag
 }
