@@ -50,8 +50,14 @@ func (m *Rep) CreateMBR(mbr *disk.Mbr) []byte {
 		strD.WriteString("<tr>")
 		strD.WriteString("<td>part_name_" + fmt.Sprint(i+1) + "</td>")
 		if par.PartStatus == 1 {
-			temName := par.PartName[:bytes.IndexByte(par.PartName[:], 0)]
-			strD.WriteString("<td>" + string(temName) + "</td>")
+			//Recupera un slice del nombre de la partición hasta encontrar un caracter nulo
+			idxEnd := bytes.IndexByte(par.PartName[:], 0)
+			if idxEnd == -1 {
+				//Si no hay caracter nulo se tomará todo el array
+				idxEnd = 16
+			}
+			tempName := par.PartName[:idxEnd]
+			strD.WriteString("<td>" + string(tempName) + "</td>")
 		} else {
 			strD.WriteString("<td></td>")
 		}

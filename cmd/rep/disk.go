@@ -30,7 +30,13 @@ func (m *Rep) CreateDisk(mbr *disk.Mbr) []byte {
 		if libre > 0 {
 			strD.WriteString("<td bgcolor=\"#f4f4f4\">Free space<br/>" + strconv.Itoa(int(libre)) + " bytes</td>\n")
 		}
-		tempName := par.PartName[:bytes.IndexByte(par.PartName[:], 0)]
+		//Recupera un slice del nombre de la partición hasta encontrar un caracter nulo
+		idxEnd := bytes.IndexByte(par.PartName[:], 0)
+		if idxEnd == -1 {
+			//Si no hay caracter nulo se tomará todo el array
+			idxEnd = 16
+		}
+		tempName := par.PartName[:idxEnd]
 		if par.PartType == 'p' {
 			strD.WriteString("<td bgcolor=\"#f7d1ba\">Primary<br/>")
 		} else if par.PartType == 'e' {
