@@ -1,9 +1,13 @@
 package lwh
 
 import (
+	"bytes"
+	"encoding/binary"
 	"mia-proyecto1/disk"
 	"time"
 	"unsafe"
+
+	"github.com/fatih/color"
 )
 
 //Superboot ...
@@ -42,8 +46,7 @@ type Superboot struct {
 
 //New calcula el tamaño de las estructuras de datos
 //con el tamaño 'size' del disco. Name es el nombre del disco
-func (s *Superboot) New(part disk.Partition, name string) {
-
+func (s *Superboot) New(part disk.Partition, name string) int32 {
 	copy(s.SbNombreHd[:], name)
 	size := int(part.PartSize)
 	n := int32((size - (2 * int(unsafe.Sizeof(Superboot{})))) / (27 + int(unsafe.Sizeof(Avd{})) + int(unsafe.Sizeof(Dd{})) + 5*int(unsafe.Sizeof(Inodo{})) + 20*int(unsafe.Sizeof(DataBlock{})) + int(unsafe.Sizeof(Log{}))))
@@ -79,5 +82,38 @@ func (s *Superboot) New(part disk.Partition, name string) {
 	s.SbFirstFreeBitTablaInodo = 0
 	s.SbFirstFreeBitBloques = 0
 	s.SbMagicNum = 201602782
+	return n
+}
 
+//ReadSB recupera el superboot del disco 'virtualDisk'
+func (s *Superboot) ReadSB(start int) bool {
+	//Crea un arreglo de bytes del tamaño del struct del superboot
+	sbArr := make([]byte, int(unsafe.Sizeof(Superboot{})))
+	//Coloca el puntero en posición para leer el sb
+	virtualDisk.Seek(0, start)
+	if _, err := virtualDisk.Read(sbArr); err != nil {
+		color.New(color.FgHiYellow).Printf("     No se pudo recuperar el Superboot %v\n", virtualDisk.Name())
+		return false
+	}
+	buff := bytes.NewBuffer(sbArr)
+	//Traduce el stream de bytes a un SuperBoot
+	if err := binary.Read(buff, binary.BigEndian, s); err != nil {
+		color.New(color.FgHiYellow).Printf("     No se pudo recuperar el Superboot %v\n", virtualDisk.Name())
+		return false
+	}
+	return true
+}
+
+//WriteSB escribe el superboot en el disco 'virtualDisk'
+func (s *Superboot) WriteSB(start int) bool {
+	//Convierte el struct en un stream de bytes
+	bin := new(bytes.Buffer)
+	binary.Write(bin, binary.BigEndian, s)
+	virtualDisk.Seek(0, start)
+	//Escribe el superboot en el disco
+	if _, err := virtualDisk.Write(bin.Bytes()); err != nil {
+		color.New(color.FgHiYellow).Printf("     No se pudo escribir el Superboot %v\n", virtualDisk.Name())
+		return false
+	}
+	return true
 }
