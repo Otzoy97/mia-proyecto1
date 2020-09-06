@@ -16,7 +16,7 @@ func (a ByPartStart) Less(i, j int) bool { return a[i].PartStart < a[j].PartStar
 func (a ByPartStart) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 
 //Find busca y devuelve una particion
-func (a *ByPartStart) Find(name string) (Partition, bool) {
+func (a *ByPartStart) Find(name string) Partition {
 	//Recupera un array con todas las particiones activas
 	byteName := [16]byte{}
 	copy(byteName[:], name)
@@ -24,10 +24,10 @@ func (a *ByPartStart) Find(name string) (Partition, bool) {
 	for _, part := range *a {
 		//Si el nombre es igual devuelve esa particion
 		if part.PartName == byteName {
-			return part, false
+			return part
 		}
 	}
-	return Partition{}, false
+	return Partition{}
 }
 
 //Check verifica si el nombre ya existe
