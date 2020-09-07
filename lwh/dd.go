@@ -1,20 +1,44 @@
 package lwh
 
+import (
+	"bytes"
+	"time"
+)
+
 //Dd ...
 type Dd struct {
-	DdArrayFiles          [5]DdFile
-	DdApDetalleDirectorio int32
+	ArrayFiles          [5]DdFile
+	ApDetalleDirectorio int32
 }
 
 //DdFile ...
 type DdFile struct {
-	DdFileNombre          [20]byte
-	DdFileApInodo         int32
-	DdFileDateCreacion    [15]byte
-	DdFileDateModficacion [15]byte
+	FileNombre          [25]byte
+	FileApInodo         int32
+	FileDateCreacion    [15]byte
+	FileDateModficacion [15]byte
 }
 
 //DataBlock ...
 type DataBlock struct {
-	BdData [25]byte
+	Data [25]byte
+}
+
+//New configura los atributos de DdFile
+func (d *DdFile) New(name string) {
+	copy(d.FileNombre[:], name)
+	tm, _ := time.Now().GobEncode()
+	copy(d.FileDateCreacion[:], tm)
+	copy(d.FileDateModficacion[:], tm)
+}
+
+//getBdData convierte el contenido del archivo en una cadena
+func (d *DataBlock) getBdData() string {
+	//Recupera los bytes hasta encontrar un caracter nulo
+	idxEnd := bytes.IndexByte(d.Data[:], 0)
+	if idxEnd == -1 {
+		idxEnd = len(d.Data)
+	}
+	temName := d.Data[:idxEnd]
+	return string(temName)
 }

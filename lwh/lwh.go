@@ -71,3 +71,21 @@ func UnmountVDisk() {
 		vdPartition = disk.Partition{}
 	}
 }
+
+//Rdauth verifica si el numero n representa
+//autorización para leer
+func Rdauth(n int8) bool {
+	return n&4 != 0
+}
+
+//Rwauth verifica si el numero n representa
+//autorización para escribir
+func Rwauth(n int8) bool {
+	return n&2 != 0
+}
+
+//Exauth verifica si el numero n representa
+//autorización para ejecutar
+func Exauth(n int8) bool {
+	return n&1 != 0
+}

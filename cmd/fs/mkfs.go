@@ -73,7 +73,11 @@ func (m *Mkfs) setStructs(file *os.File, name string, path string) {
 	var sb lwh.Superboot
 	sb.New(par, hdName)
 	//Crea el AVD raíz
+	var avd lwh.Avd
+	avd.New("/", "664", 1)
 	//Crea un detalle de directorio para la raiz
+	dd := lwh.Dd{ApDetalleDirectorio: -1}
+	dd.ArrayFiles[0].New("user.txt")
 	//Crea el archivo user.txt para el directorio raiz
 	//TODO: Realizar las funciones para determinar los bitmaps disponibles
 }

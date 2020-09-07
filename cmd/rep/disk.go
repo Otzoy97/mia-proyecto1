@@ -3,7 +3,6 @@ package rep
 import (
 	"bytes"
 	"fmt"
-	"mia-proyecto1/cmd"
 	"mia-proyecto1/disk"
 	"sort"
 	"strconv"
@@ -14,7 +13,7 @@ import (
 //CreateDisk ...
 func (m *Rep) CreateDisk(mbr *disk.Mbr) []byte {
 	var strD strings.Builder
-	parArr, _ := cmd.CreateArrPart(mbr)
+	parArr, _ := mbr.CreateArrPart()
 	sort.Sort(disk.ByPartStart(parArr))
 	strD.WriteString("digraph G{\n")
 	strD.WriteString("graph[pad=\"0.5\", nodesep=\"0.5\", ranksep=\"2\"]\n")

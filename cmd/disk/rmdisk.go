@@ -33,6 +33,7 @@ func (m *Rmdisk) Validate() bool {
 }
 
 //Run elimina un disco
+//TODO: Validar que no se elimine un disco que tenga montada una partición
 func (m *Rmdisk) Run() {
 	//Verifica si el disco existe.
 	if _, err := os.Stat(m.path); err != nil {
