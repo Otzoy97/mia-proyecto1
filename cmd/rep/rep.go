@@ -53,6 +53,7 @@ func (m *Rep) Validate() bool {
 		f = false
 	}
 	if !f {
+		color.New(color.FgHiRed, color.Bold).Println("Rep no se puede ejecutar")
 		return false
 	}
 	m.nombre = m.Oplst["nombre"].(string)
