@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"mia-proyecto1/cmd"
 	cmdisk "mia-proyecto1/cmd/disk"
+	"mia-proyecto1/cmd/fs"
 	"mia-proyecto1/cmd/rep"
 	"reflect"
 
@@ -294,6 +295,7 @@ func (p *Parser) parserActions(s string, t int) {
 	case "Logout":
 	case "Login":
 	case "Mkfs":
+		p.Cmdlst = append(p.Cmdlst, &fs.Mkfs{Row: p.Lex.tokQueue[t].row})
 	case "Op":
 		if p.Lex.tokQueue[t].tokname == "p" {
 			p.Cmdlst[len(p.Cmdlst)-1].AddOp("p", true)

@@ -1,4 +1,4 @@
-package mkfs
+package fs
 
 import (
 	"bytes"
@@ -13,26 +13,39 @@ import (
 
 //Mkfs ...
 type Mkfs struct {
-	id   string
-	tipo byte
-	Row  int
+	id     string
+	tipo   string
+	extype byte
+	Row    int
 }
 
-//AddOp ...
+//AddOp añade un parámetro al comando Mkfs
 func (m *Mkfs) AddOp(s string, v interface{}) {
 	if s == "id" {
 		m.id = v.(string)
-	} else if s == "type" {
-		m.tipo = v.(byte)
+	} else if s == "type" || s == "tipo" {
+		m.tipo = v.(string)
 	}
 }
 
-//Validate ....
+//Validate verifica que Mkfs tenga los parámetros necesarios
 func (m *Mkfs) Validate() bool {
-	if m.tipo == 0 {
-		m.tipo = 'u'
+	if m.tipo == "" {
+		m.extype = 'a'
+	} else {
+		if m.tipo == "full" {
+			m.extype = 'u'
+		} else if m.tipo == "fast" {
+			m.extype = 'a'
+		} else {
+			color.New(color.FgHiYellow).Printf("Mkfs: type/tipo solo puede tomar el valor de fast y full (%v)\n", m.Row)
+			color.New(color.FgHiRed, color.Bold).Println("Mkfs no se puede ejecutar")
+			return false
+		}
 	}
 	if m.id == "" {
+		color.New(color.FgHiYellow).Printf("Mkfs: no se encontró id (%v)\n", m.Row)
+		color.New(color.FgHiRed, color.Bold).Println("Mkfs no se puede ejecutar")
 		return false
 	}
 	return true
@@ -57,6 +70,7 @@ func (m *Mkfs) Run() {
 		return
 	}
 	m.setStructs(file, name, path)
+	file.Close()
 }
 
 //Crea y configura las estructuras para el sistema de archivos
