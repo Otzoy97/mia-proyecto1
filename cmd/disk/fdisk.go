@@ -68,9 +68,9 @@ func (m *Fdisk) Validate() bool {
 				case "ff":
 					m.fit = 'f'
 				case "wf":
-					m.unit = 'w'
+					m.fit = 'w'
 				case "bf":
-					m.unit = 'b'
+					m.fit = 'b'
 				default:
 					color.New(color.FgHiYellow).Printf("Fdisk: fit debe ser 'ff', 'wf' o 'bf' (%v)\n", m.Row)
 					f = false
