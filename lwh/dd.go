@@ -25,7 +25,7 @@ type DataBlock struct {
 }
 
 //New configura los atributos de DdFile
-func (d *DdFile) New(name string) {
+func (d *DdFile) NewDdFile(name string) {
 	copy(d.FileNombre[:], name)
 	tm, _ := time.Now().GobEncode()
 	copy(d.FileDateCreacion[:], tm)

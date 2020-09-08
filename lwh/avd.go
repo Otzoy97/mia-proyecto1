@@ -11,16 +11,18 @@ type Avd struct {
 	ApArbolVirtualDirectorio int32
 	Proper                   int32
 	Auth                     [3]byte
+	Gid                      int32
 }
 
-//New configura un nuevo Arbol virtual de directorio
-func (a *Avd) New(name, auth string, proper int) {
+//NewAvd configura un nuevo Arbol virtual de directorio
+func (a *Avd) NewAvd(name, auth string, proper, gid int) {
 	//Establece la fecha de creación
 	tm, _ := time.Now().GobEncode()
 	copy(a.FechaCreacion[:], tm)
 	copy(a.NombreDirectorio[:], name)
 	a.ApArbolVirtualDirectorio = -1
 	a.Proper = int32(proper)
+	a.Gid = int32(gid)
 	copy(a.Auth[:], auth)
 }
 
