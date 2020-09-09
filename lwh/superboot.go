@@ -24,7 +24,7 @@ type Superboot struct {
 	SbDateCreacion                  [15]byte
 	SbDateUltimoMontaje             [15]byte
 	SbMontajesCount                 int32
-	SpApBitMapArbolDirectorio       int32
+	SbApBitMapArbolDirectorio       int32
 	SbApArbolDirectorio             int32
 	SbApBitmapDetalleDirectorio     int32
 	SbApDetalleDirectorio           int32
@@ -64,8 +64,8 @@ func (s *Superboot) New(part disk.Partition, name string) int32 {
 	copy(s.SbDateCreacion[:], tDec)
 	copy(s.SbDateUltimoMontaje[:], tDec)
 	s.SbMontajesCount = 0
-	s.SpApBitMapArbolDirectorio = int32(part.PartStart) + int32(unsafe.Sizeof(Superboot{}))
-	s.SbApArbolDirectorio = s.SpApBitMapArbolDirectorio + n
+	s.SbApBitMapArbolDirectorio = int32(part.PartStart) + int32(unsafe.Sizeof(Superboot{}))
+	s.SbApArbolDirectorio = s.SbApBitMapArbolDirectorio + n
 	s.SbApBitmapDetalleDirectorio = s.SbApArbolDirectorio + n*int32(unsafe.Sizeof(Avd{}))
 	s.SbApDetalleDirectorio = s.SbApBitmapDetalleDirectorio + n
 	s.SbApBitMapaTablaInodo = s.SbApDetalleDirectorio + n*int32(unsafe.Sizeof(Dd{}))

@@ -24,7 +24,7 @@ type DataBlock struct {
 	Data [25]byte
 }
 
-//New configura los atributos de DdFile
+//NewDdFile configura los atributos de DdFile
 func (d *DdFile) NewDdFile(name string) {
 	copy(d.FileNombre[:], name)
 	tm, _ := time.Now().GobEncode()
