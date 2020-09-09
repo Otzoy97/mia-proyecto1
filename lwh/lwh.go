@@ -1,6 +1,8 @@
 package lwh
 
 import (
+	"bytes"
+	"encoding/binary"
 	"mia-proyecto1/disk"
 	"os"
 
@@ -88,4 +90,36 @@ func Rwauth(n int8) bool {
 //autorización para ejecutar
 func Exauth(n int8) bool {
 	return n&1 != 0
+}
+
+//Getbitmap 0-arbdir 1-detdir 2-inode 3-block
+func Getbitmap(op byte) []byte {
+	switch op {
+	case 0:
+		//Arbol de directorio
+		virtualDisk.Seek(0, int(vdSuperBoot.SbApBitMapArbolDirectorio))
+		b := make([]byte, int(vdSuperBoot.SbArbolvirtualCount))
+		if _, err := virtualDisk.Read(b); err != nil {
+			color.New(color.FgHiYellow).Printf("     No se pudo recuperar el bitmap de directorio %v\n", virtualDisk.Name())
+		} else {
+			buff := new(bytes.Buffer)
+			bArr := make([]byte, int(vdSuperBoot.SbArbolvirtualCount))
+			if err := binary.Read(buff, binary.BigEndian, bArr); err != nil {
+				color.New(color.FgHiYellow).Printf("     No se pudo recuperar el bitmap de directorio %v\n", virtualDisk.Name())
+			}
+		}
+	case 1:
+		//Detalle de directorio
+		virtualDisk.Seek(0, int(vdSuperBoot.SbApBitmapDetalleDirectorio))
+		//b = make([]byte, int(vdSuperBoot.SbDetalleDirectorioCount))
+	case 2:
+		//Tabla de inodos
+		virtualDisk.Seek(0, int(vdSuperBoot.SbApBitMapaTablaInodo))
+		//b = make([]byte, int(vdSuperBoot.SbInodosCount))
+	case 3:
+		//Bloque de datos
+		virtualDisk.Seek(0, int(vdSuperBoot.SbApBloques))
+		//b = make([]byte, int(vdSuperBoot.SbBloquesCount))
+	}
+	return []byte{}
 }
