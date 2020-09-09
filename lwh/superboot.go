@@ -90,7 +90,7 @@ func (s *Superboot) ReadSB(start int) bool {
 	//Crea un arreglo de bytes del tamaño del struct del superboot
 	sbArr := make([]byte, int(unsafe.Sizeof(Superboot{})))
 	//Coloca el puntero en posición para leer el sb
-	virtualDisk.Seek(0, start)
+	virtualDisk.Seek(int64(start), 0)
 	if _, err := virtualDisk.Read(sbArr); err != nil {
 		color.New(color.FgHiYellow).Printf("     No se pudo recuperar el Superboot %v\n", virtualDisk.Name())
 		return false
@@ -109,7 +109,7 @@ func (s *Superboot) WriteSB(start int) bool {
 	//Convierte el struct en un stream de bytes
 	bin := new(bytes.Buffer)
 	binary.Write(bin, binary.BigEndian, s)
-	virtualDisk.Seek(0, start)
+	virtualDisk.Seek(int64(start), 0)
 	//Escribe el superboot en el disco
 	if _, err := virtualDisk.Write(bin.Bytes()); err != nil {
 		color.New(color.FgHiYellow).Printf("     No se pudo escribir el Superboot %v\n", virtualDisk.Name())

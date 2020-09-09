@@ -198,7 +198,7 @@ func (m *Fdisk) Run() {
 			//Determina el inicio y el final de la partición
 			for _, par := range parArr {
 				if par.PartName == namePart {
-					if _, err := file.Seek(0, int(par.PartStart)); err != nil {
+					if _, err := file.Seek(int64(par.PartStart), 0); err != nil {
 						color.New(color.FgHiYellow).Printf("Fdisk: ocurrió un error al manipular el disco '%v' (%v)\n%v\n", m.path, m.Row, err.Error())
 						color.New(color.FgHiRed, color.Bold).Println("Fdisk fracasó")
 						return

@@ -97,28 +97,30 @@ func Getbitmap(op byte) []byte {
 	switch op {
 	case 0:
 		//Arbol de directorio
-		virtualDisk.Seek(0, int(vdSuperBoot.SbApBitMapArbolDirectorio))
+		virtualDisk.Seek(int64(vdSuperBoot.SbApBitMapArbolDirectorio), 0)
 		b := make([]byte, int(vdSuperBoot.SbArbolvirtualCount))
 		if _, err := virtualDisk.Read(b); err != nil {
-			color.New(color.FgHiYellow).Printf("     No se pudo recuperar el bitmap de directorio %v\n", virtualDisk.Name())
+			color.New(color.FgHiYellow).Printf("     No se pudo recuperar el bitmap de directorio 1-%v\n     %v\n", virtualDisk.Name(), err.Error())
 		} else {
-			buff := new(bytes.Buffer)
+			buff := bytes.NewBuffer(b)
 			bArr := make([]byte, int(vdSuperBoot.SbArbolvirtualCount))
-			if err := binary.Read(buff, binary.BigEndian, bArr); err != nil {
-				color.New(color.FgHiYellow).Printf("     No se pudo recuperar el bitmap de directorio %v\n", virtualDisk.Name())
+			if err := binary.Read(buff, binary.BigEndian, &bArr); err != nil {
+				color.New(color.FgHiYellow).Printf("     No se pudo recuperar el bitmap de directorio 2-%v\n     %v\n", virtualDisk.Name(), err.Error())
+			} else {
+				return bArr
 			}
 		}
 	case 1:
 		//Detalle de directorio
-		virtualDisk.Seek(0, int(vdSuperBoot.SbApBitmapDetalleDirectorio))
+		virtualDisk.Seek(int64(vdSuperBoot.SbApBitmapDetalleDirectorio), 0)
 		//b = make([]byte, int(vdSuperBoot.SbDetalleDirectorioCount))
 	case 2:
 		//Tabla de inodos
-		virtualDisk.Seek(0, int(vdSuperBoot.SbApBitMapaTablaInodo))
+		virtualDisk.Seek(int64(vdSuperBoot.SbApBitMapaTablaInodo), 0)
 		//b = make([]byte, int(vdSuperBoot.SbInodosCount))
 	case 3:
 		//Bloque de datos
-		virtualDisk.Seek(0, int(vdSuperBoot.SbApBloques))
+		virtualDisk.Seek(int64(vdSuperBoot.SbApBloques), 0)
 		//b = make([]byte, int(vdSuperBoot.SbBloquesCount))
 	}
 	return []byte{}

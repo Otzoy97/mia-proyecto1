@@ -89,9 +89,11 @@ func (m *Mkfs) setStructs(file *os.File, name string, path string) bool {
 	//Recupera la partición
 	par := parArr.Find(name)
 	//Limpia la partición
+	bin := new(bytes.Buffer)
 	buff := make([]byte, int(par.PartSize))
-	file.Seek(0, int(par.PartStart))
-	if _, err := file.Write(buff); err != nil {
+	file.Seek(int64(par.PartStart), 0)
+	binary.Write(bin, binary.BigEndian, &buff)
+	if _, err := file.Write(bin.Bytes()); err != nil {
 		color.New(color.FgHiYellow).Printf("Mkfs: el disco no se pudo formatear (%v)\n", m.Row)
 		return false
 	}
@@ -124,8 +126,8 @@ func (m *Mkfs) setStructs(file *os.File, name string, path string) bool {
 	sb.SbDetalleDirectorioFree--
 	sb.SbBloquesFree -= 2
 	//Escribe el superboot al inicio de la partición
-	bin := new(bytes.Buffer)
-	file.Seek(0, int(par.PartStart))
+	bin.Reset()
+	file.Seek(int64(par.PartStart), 0)
 	binary.Write(bin, binary.BigEndian, &sb)
 	if _, err := file.Write(bin.Bytes()); err != nil {
 		color.New(color.FgHiYellow).Printf("Mkfs: no se pudo escribir el superboot (%v)\n", m.Row)
@@ -134,7 +136,7 @@ func (m *Mkfs) setStructs(file *os.File, name string, path string) bool {
 	//Escribe un 1 en el bitmap de avd
 	bin.Reset()
 	var b byte = 1
-	file.Seek(0, int(sb.SpApBitMapArbolDirectorio))
+	file.Seek(int64(sb.SbApBitMapArbolDirectorio), 0)
 	binary.Write(bin, binary.BigEndian, b)
 	if _, err := file.Write(bin.Bytes()); err != nil {
 		color.New(color.FgHiYellow).Printf("Mkfs: no se pudo escribir el bitmap del Avd (%v)\n", m.Row)
@@ -142,7 +144,7 @@ func (m *Mkfs) setStructs(file *os.File, name string, path string) bool {
 	}
 	//Escribe el avd
 	bin.Reset()
-	file.Seek(0, int(sb.SbApArbolDirectorio))
+	file.Seek(int64(sb.SbApArbolDirectorio), 0)
 	binary.Write(bin, binary.BigEndian, &avd)
 	if _, err := file.Write(bin.Bytes()); err != nil {
 		color.New(color.FgHiYellow).Printf("Mkfs: no se pudo escribir el Avd (%v)\n", m.Row)
@@ -150,7 +152,7 @@ func (m *Mkfs) setStructs(file *os.File, name string, path string) bool {
 	}
 	//Escribe un 1 en el bitmap de detalle de directorio
 	bin.Reset()
-	file.Seek(0, int(sb.SbApBitmapDetalleDirectorio))
+	file.Seek(int64(sb.SbApBitmapDetalleDirectorio), 0)
 	binary.Write(bin, binary.BigEndian, b)
 	if _, err := file.Write(bin.Bytes()); err != nil {
 		color.New(color.FgHiYellow).Printf("Mkfs: no se pudo escribir el bitmap de detalle de directorio (%v)\n", m.Row)
@@ -158,7 +160,7 @@ func (m *Mkfs) setStructs(file *os.File, name string, path string) bool {
 	}
 	//Escribe el detalle de directorio
 	bin.Reset()
-	file.Seek(0, int(sb.SbApDetalleDirectorio))
+	file.Seek(int64(sb.SbApDetalleDirectorio), 0)
 	binary.Write(bin, binary.BigEndian, &dd)
 	if _, err := file.Write(bin.Bytes()); err != nil {
 		color.New(color.FgHiYellow).Printf("Mkfs: no se pudo escribir el detalle de directorio (%v)\n", m.Row)
@@ -166,7 +168,7 @@ func (m *Mkfs) setStructs(file *os.File, name string, path string) bool {
 	}
 	//Escribe el bit map inodo
 	bin.Reset()
-	file.Seek(0, int(sb.SbApBitMapaTablaInodo))
+	file.Seek(int64(sb.SbApBitMapaTablaInodo), 0)
 	binary.Write(bin, binary.BigEndian, b)
 	if _, err := file.Write(bin.Bytes()); err != nil {
 		color.New(color.FgHiYellow).Printf("Mkfs: no se pudo escribir el bitmap de inodo (%v)\n", m.Row)
@@ -174,7 +176,7 @@ func (m *Mkfs) setStructs(file *os.File, name string, path string) bool {
 	}
 	//Escribe el inodo
 	bin.Reset()
-	file.Seek(0, int(sb.SbApTablaInodo))
+	file.Seek(int64(sb.SbApTablaInodo), 0)
 	binary.Write(bin, binary.BigEndian, &ino)
 	if _, err := file.Write(bin.Bytes()); err != nil {
 		color.New(color.FgHiYellow).Printf("Mkfs: no se pudo escribir el inodo (%v)\n", m.Row)
@@ -182,7 +184,7 @@ func (m *Mkfs) setStructs(file *os.File, name string, path string) bool {
 	}
 	//Escribe el bit map de bloque de datos
 	bin.Reset()
-	file.Seek(0, int(sb.SbApBitmapBloques))
+	file.Seek(int64(sb.SbApBitmapBloques), 0)
 	binary.Write(bin, binary.BigEndian, b)
 	binary.Write(bin, binary.BigEndian, b)
 	if _, err := file.Write(bin.Bytes()); err != nil {
@@ -191,7 +193,7 @@ func (m *Mkfs) setStructs(file *os.File, name string, path string) bool {
 	}
 	//Escribe el bloque de datos
 	bin.Reset()
-	file.Seek(0, int(sb.SbApBloques))
+	file.Seek(int64(sb.SbApBloques), 0)
 	binary.Write(bin, binary.BigEndian, &db0)
 	binary.Write(bin, binary.BigEndian, &db1)
 	if _, err := file.Write(bin.Bytes()); err != nil {
@@ -204,7 +206,7 @@ func (m *Mkfs) setStructs(file *os.File, name string, path string) bool {
 	log01.NewLog(lwh.MKDIR, 0, "/", "")
 	log02.NewLog(lwh.MKDIR, 0, "/user.txt", "1,G,root\n1,U,root,root,201602782")
 	bin.Reset()
-	file.Seek(0, int(sb.SbApLog))
+	file.Seek(int64(sb.SbApLog), 0)
 	binary.Write(bin, binary.BigEndian, &log01)
 	binary.Write(bin, binary.BigEndian, &log02)
 	if _, err := file.Write(bin.Bytes()); err != nil {
@@ -213,7 +215,7 @@ func (m *Mkfs) setStructs(file *os.File, name string, path string) bool {
 	}
 	//Escriba la copia del superboot
 	bin.Reset()
-	file.Seek(0, int(sb.SbApLog+sb.SbArbolvirtualCount*sb.SbApLog))
+	file.Seek(int64(sb.SbApLog+sb.SbArbolvirtualCount*sb.SbApLog), 0)
 	binary.Write(bin, binary.BigEndian, &sb)
 	if _, err := file.Write(bin.Bytes()); err != nil {
 		color.New(color.FgHiYellow).Printf("Mkfs: no se pudo escribir la copia del superboot (%v)\n", m.Row)
