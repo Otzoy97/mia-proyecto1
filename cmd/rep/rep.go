@@ -3,6 +3,7 @@ package rep
 import (
 	"mia-proyecto1/cmd"
 	"mia-proyecto1/disk"
+	"mia-proyecto1/lwh"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -17,6 +18,7 @@ type Rep struct {
 	path, id, ruta, nombre string
 	exec                   bool
 	Row                    int
+	diskPath, namePath     string
 }
 
 //AddOp ...
@@ -67,15 +69,15 @@ func (m *Rep) Run() {
 	//Recupera el mbr
 	mbr := disk.Mbr{}
 	//Recupera el path del disco
-	path, name := disk.FindImg(m.id)
-	if path == "" {
+	m.diskPath, m.namePath = disk.FindImg(m.id)
+	if m.diskPath == "" {
 		//No existe la partición
 		color.New(color.FgHiYellow).Printf("Rep: '%v' no está montada (%v)\n", m.id, m.Row)
 		color.New(color.FgHiRed, color.Bold).Println("Rep fracasó")
 		return
 	}
 	//Intenta abrir el disco
-	diskFile, err := os.OpenFile(path, os.O_RDWR, os.ModePerm)
+	diskFile, err := os.OpenFile(m.diskPath, os.O_RDWR, os.ModePerm)
 	defer diskFile.Close()
 	//Verifica que no haya error
 	if err != nil {
@@ -95,24 +97,23 @@ func (m *Rep) Run() {
 		color.New(color.FgHiRed).Println("Rep fracasó")
 		return
 	}
+	//Crea el nombre para el reporte
+	fileName := m.nombre + "_" + strings.Split(filepath.Base(m.diskPath), ".")[0] + "_" + m.namePath
+	//Recupera el contenido del archivo que generará el reporte
+	gContent := m.createCont(&mbr)
+	//Decide qué tipo de reporte generará (imagen, archivo de texto)
+	if m.nombre == "bm_arbdir" || m.nombre == "bm_detdir" || m.nombre == "bm_inode" || m.nombre == "bm_block" {
+		newFile, _ := os.Create(fileName + ".txt")
+		newFile.Write(gContent)
+		newFile.Close()
+		color.New(color.FgHiGreen, color.Bold).Printf("Rep generó '%v' en '%v' (%v)\n", fileName, m.path, m.Row)
+		return
+	}
 	//Crea el archivo qu contendra el texto para generar el grafo
 	gFile, _ := os.Create("doFile.dot")
-	switch m.nombre {
-	case "mbr":
-		//Construye un texto para el reporte del MBR
-		b := m.CreateMBR(&mbr)
-		//Escribe el archivo dot
-		gFile.Write(b)
-		gFile.Close()
-	case "disk":
-		//Construye el text para el reporte del DISK
-		b := m.CreateDisk(&mbr)
-		//Escribe el archivo dot
-		gFile.Write(b)
-		gFile.Close()
-	}
-	//Crea el nombre para el reporte
-	fileName := m.nombre + "_" + strings.Split(filepath.Base(path), ".")[0] + "_" + name
+	//Escribe el gContent en gFile
+	gFile.Write(gContent)
+	gFile.Close()
 	//Crea el grafo
 	graphName := m.path + "/" + fileName + ".png"
 	cmd := exec.Command("dot", "-Tpng", "doFile.dot", "-o", graphName)
@@ -123,4 +124,35 @@ func (m *Rep) Run() {
 		os.Remove("doFile.dot")
 		color.New(color.FgHiGreen, color.Bold).Printf("Rep generó '%v' en '%v' (%v)\n", fileName, m.path, m.Row)
 	}
+}
+
+//createCont crea el contenido del archivo de texto para generar el reporte
+func (m *Rep) createCont(mbr *disk.Mbr) []byte {
+	switch m.nombre {
+	case "mbr":
+		//Construye un texto para el reporte del MBR
+		return m.CreateMBR(mbr)
+	case "disk":
+		//Construye el text para el reporte del DISK
+		return m.CreateDisk(mbr)
+	case "bm_arbdir":
+		//Monta el sistema de archivos
+		lwh.MountVDisk(m.diskPath, m.namePath)
+		//Recupera el bitmap del arbol de directorio
+		b := lwh.Getbitmap(0)
+		return m.CreateBitMap(b)
+	case "bm_detdir":
+		//Recupera el bitmap de detalle de directorio
+		b := lwh.Getbitmap(1)
+		return m.CreateBitMap(b)
+	case "bm_inode":
+		//Recupera el bitmap de inodos
+		b := lwh.Getbitmap(2)
+		return m.CreateBitMap(b)
+	case "bm_block":
+		//Recupera el bitmap de bloque de datos
+		b := lwh.Getbitmap(3)
+		return m.CreateBitMap(b)
+	}
+	return []byte{}
 }
