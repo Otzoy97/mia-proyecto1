@@ -103,7 +103,7 @@ func (m *Rep) Run() {
 	gContent := m.createCont(&mbr)
 	//Decide qué tipo de reporte generará (imagen, archivo de texto)
 	if m.nombre == "bm_arbdir" || m.nombre == "bm_detdir" || m.nombre == "bm_inode" || m.nombre == "bm_block" {
-		newFile, _ := os.Create(fileName + ".txt")
+		newFile, _ := os.Create(m.path + "/" + fileName + ".txt")
 		newFile.Write(gContent)
 		newFile.Close()
 		color.New(color.FgHiGreen, color.Bold).Printf("Rep generó '%v' en '%v' (%v)\n", fileName, m.path, m.Row)
@@ -140,18 +140,26 @@ func (m *Rep) createCont(mbr *disk.Mbr) []byte {
 		lwh.MountVDisk(m.diskPath, m.namePath)
 		//Recupera el bitmap del arbol de directorio
 		b := lwh.Getbitmap(0)
+		//Desmonta el sistema de archivos
+		lwh.UnmountVDisk()
 		return m.CreateBitMap(b)
 	case "bm_detdir":
 		//Recupera el bitmap de detalle de directorio
 		b := lwh.Getbitmap(1)
+		//Desmonta el sistema de archivos
+		lwh.UnmountVDisk()
 		return m.CreateBitMap(b)
 	case "bm_inode":
 		//Recupera el bitmap de inodos
 		b := lwh.Getbitmap(2)
+		//Desmonta el sistema de archivos
+		lwh.UnmountVDisk()
 		return m.CreateBitMap(b)
 	case "bm_block":
 		//Recupera el bitmap de bloque de datos
 		b := lwh.Getbitmap(3)
+		//Desmonta el sistema de archivos
+		lwh.UnmountVDisk()
 		return m.CreateBitMap(b)
 	}
 	return []byte{}

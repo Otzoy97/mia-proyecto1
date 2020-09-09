@@ -22,7 +22,7 @@ func (e *Ebr) WriteEbr(f *os.File) bool {
 	bin := new(bytes.Buffer)
 	binary.Write(bin, binary.BigEndian, e)
 	//Coloca el puntero en posición
-	f.Seek(0, int(e.PartStart))
+	f.Seek(int64(e.PartStart), 0)
 	if _, err := f.Write(bin.Bytes()); err != nil {
 		color.New(color.FgHiYellow).Printf("No se pudo escribir el ebr %v\n", f.Name())
 		return false
