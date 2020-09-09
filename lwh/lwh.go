@@ -117,3 +117,8 @@ func Getbitmap(op byte) []byte {
 	}
 	return b
 }
+
+//GetSuperboot devuelve una referencia l superboot montado
+func GetSuperboot() *Superboot {
+	return &vdSuperBoot
+}

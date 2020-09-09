@@ -135,6 +135,14 @@ func (m *Rep) createCont(mbr *disk.Mbr) []byte {
 	case "disk":
 		//Construye el text para el reporte del DISK
 		return m.CreateDisk(mbr)
+	case "sb":
+		//Monta el sistema de archivos
+		lwh.MountVDisk(m.diskPath, m.namePath)
+		//Construye el texto para el reporte del SUPERBOOT
+		b := m.CreateSB(lwh.GetSuperboot())
+		//Desmonta el sistema de archivos
+		lwh.UnmountVDisk()
+		return b
 	case "bm_arbdir":
 		//Monta el sistema de archivos
 		lwh.MountVDisk(m.diskPath, m.namePath)
