@@ -144,18 +144,24 @@ func (m *Rep) createCont(mbr *disk.Mbr) []byte {
 		lwh.UnmountVDisk()
 		return m.CreateBitMap(b)
 	case "bm_detdir":
+		//Monta el sistema de archivos
+		lwh.MountVDisk(m.diskPath, m.namePath)
 		//Recupera el bitmap de detalle de directorio
 		b := lwh.Getbitmap(1)
 		//Desmonta el sistema de archivos
 		lwh.UnmountVDisk()
 		return m.CreateBitMap(b)
 	case "bm_inode":
+		//Monta el sistema de archivos
+		lwh.MountVDisk(m.diskPath, m.namePath)
 		//Recupera el bitmap de inodos
 		b := lwh.Getbitmap(2)
 		//Desmonta el sistema de archivos
 		lwh.UnmountVDisk()
 		return m.CreateBitMap(b)
 	case "bm_block":
+		//Monta el sistema de archivos
+		lwh.MountVDisk(m.diskPath, m.namePath)
 		//Recupera el bitmap de bloque de datos
 		b := lwh.Getbitmap(3)
 		//Desmonta el sistema de archivos
