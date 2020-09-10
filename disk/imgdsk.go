@@ -1,6 +1,7 @@
 package disk
 
 import (
+	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
@@ -20,7 +21,7 @@ type Imgdsk struct {
 var idxLetter [26]byte = [26]byte{}
 
 //mapa de imgdsk
-var imglst map[byte]Imgdsk = map[byte]Imgdsk{}
+var imglst map[byte]*Imgdsk = map[byte]*Imgdsk{}
 
 //AddImg ...
 func AddImg(path, name string) (bool, string) {
@@ -38,9 +39,9 @@ func AddImg(path, name string) (bool, string) {
 				}
 			}
 			//El ciclo terminó, no existe el nombre. Se añade el nuevo nombre
-			value.autID++
-			value.parts[value.autID] = name
-			return true, "vd" + string(key) + string(value.autID)
+			imglst[key].autID++
+			imglst[key].parts[value.autID] = name
+			return true, "vd" + string(key) + fmt.Sprint(value.autID)
 		}
 	}
 	//No existe el nombre
@@ -60,7 +61,7 @@ func AddImg(path, name string) (bool, string) {
 	//Actualiza idxLetter
 	idxLetter[letter-97] = letter
 	//Coloca el path y el name en el diccionari imglst
-	imglst[letter] = Imgdsk{path: path,
+	imglst[letter] = &Imgdsk{path: path,
 		autID: 1,
 		parts: map[int]string{1: name}}
 	return true, "vd" + string(letter) + "1"
