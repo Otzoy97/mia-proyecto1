@@ -7,6 +7,7 @@ import (
 	"mia-proyecto1/lwh"
 	"os"
 	"strings"
+	"unsafe"
 
 	"github.com/fatih/color"
 )
@@ -126,7 +127,7 @@ func (m *Mkfs) setStructs(file *os.File, name string, path string) bool {
 	sb.SbDetalleDirectorioFree--
 	sb.SbBloquesFree -= 2
 	//Escribe el superboot al inicio de la partición
-	bin.Reset()
+	bin = new(bytes.Buffer)
 	file.Seek(int64(par.PartStart), 0)
 	binary.Write(bin, binary.BigEndian, &sb)
 	if _, err := file.Write(bin.Bytes()); err != nil {
@@ -205,7 +206,7 @@ func (m *Mkfs) setStructs(file *os.File, name string, path string) bool {
 	var log02 lwh.Log
 	log01.NewLog(lwh.MKDIR, 0, "/", "")
 	log02.NewLog(lwh.MKFILE, 1, "/user.txt", "1,G,root\n1,U,root,root,201602782")
-	bin.Reset()
+	bin = new(bytes.Buffer)
 	file.Seek(int64(sb.SbApLog), 0)
 	binary.Write(bin, binary.BigEndian, &log01)
 	binary.Write(bin, binary.BigEndian, &log02)
@@ -214,8 +215,8 @@ func (m *Mkfs) setStructs(file *os.File, name string, path string) bool {
 		return false
 	}
 	//Escriba la copia del superboot
-	bin.Reset()
-	file.Seek(int64(sb.SbApLog+sb.SbArbolvirtualCount*sb.SbApLog), 0)
+	bin = new(bytes.Buffer)
+	file.Seek(int64(sb.SbApLog+sb.SbArbolvirtualCount*int32(unsafe.Sizeof(lwh.Log{}))), 0)
 	binary.Write(bin, binary.BigEndian, &sb)
 	if _, err := file.Write(bin.Bytes()); err != nil {
 		color.New(color.FgHiYellow).Printf("Mkfs: no se pudo escribir la copia del superboot (%v)\n", m.Row)
