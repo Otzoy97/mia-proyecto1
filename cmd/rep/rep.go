@@ -102,7 +102,7 @@ func (m *Rep) Run() {
 	//Recupera el contenido del archivo que generará el reporte
 	gContent := m.createCont(&mbr)
 	//Decide qué tipo de reporte generará (imagen, archivo de texto)
-	if m.nombre == "bm_arbdir" || m.nombre == "bm_detdir" || m.nombre == "bm_inode" || m.nombre == "bm_block" {
+	if m.nombre == "bm_arbdir" || m.nombre == "bm_detdir" || m.nombre == "bm_inode" || m.nombre == "bm_block" || m.nombre == "bitacora" {
 		newFile, _ := os.Create(m.path + "/" + fileName + ".txt")
 		newFile.Write(gContent)
 		newFile.Close()
@@ -175,6 +175,15 @@ func (m *Rep) createCont(mbr *disk.Mbr) []byte {
 		//Desmonta el sistema de archivos
 		lwh.UnmountVDisk()
 		return m.CreateBitMap(b)
+	case "bitacora":
+		//Monta el sistema de archivos
+		lwh.MountVDisk(m.diskPath, m.namePath)
+		//Recupera el registro de la bitacora
+		logArr := lwh.Getlogs()
+		//Desmonta el sistema de archivos
+		lwh.UnmountVDisk()
+		//Crea el texto para el reporte
+		return m.CreateLog(logArr)
 	}
 	return []byte{}
 }
