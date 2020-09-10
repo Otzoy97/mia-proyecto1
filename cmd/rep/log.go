@@ -16,7 +16,7 @@ func (r *Rep) CreateLog(lg []lwh.Log) []byte {
 	for i, v := range lg {
 		//Traduce la fecha
 		tm.GobDecode(v.LogFecha[:])
-		strd.WriteString(fmt.Sprint(i) + " - " + tm.Format("02 Jan 2006 03:04:05 PMG") + "\n")
+		strd.WriteString(fmt.Sprint(i+1) + " - " + tm.Format("02 Jan 2006 03:04:05 PM") + "\n")
 		strd.WriteString("Operación: " + v.Getop() + "\n")
 		strd.WriteString("Tipo: " + v.Getipo() + "\n")
 		//Recupera el nombre
@@ -30,7 +30,7 @@ func (r *Rep) CreateLog(lg []lwh.Log) []byte {
 		if idxEnd == -1 {
 			idxEnd = 256
 		}
-		strd.WriteString("Contenido: " + string(v.LogContenido[:idxEnd]) + "\n\n")
+		strd.WriteString("Contenido: \"" + string(v.LogContenido[:idxEnd]) + "\"\n\n")
 	}
 	return []byte(strd.String())
 }

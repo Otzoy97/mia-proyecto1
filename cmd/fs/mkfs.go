@@ -204,7 +204,7 @@ func (m *Mkfs) setStructs(file *os.File, name string, path string) bool {
 	var log01 lwh.Log
 	var log02 lwh.Log
 	log01.NewLog(lwh.MKDIR, 0, "/", "")
-	log02.NewLog(lwh.MKDIR, 0, "/user.txt", "1,G,root\n1,U,root,root,201602782")
+	log02.NewLog(lwh.MKFILE, 1, "/user.txt", "1,G,root\n1,U,root,root,201602782")
 	bin.Reset()
 	file.Seek(int64(sb.SbApLog), 0)
 	binary.Write(bin, binary.BigEndian, &log01)
