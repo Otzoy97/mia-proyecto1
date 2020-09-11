@@ -7,8 +7,6 @@ import (
 	"strings"
 	"time"
 	"unsafe"
-
-	"github.com/fatih/color"
 )
 
 //Avd ...
@@ -44,26 +42,28 @@ func (a *Avd) ReadAvd() bool {
 		return false
 	}
 	buff := bytes.NewBuffer(arr)
-	if err := binary.Read(buff, binary.BigEndian, a); err != nill {
+	if err := binary.Read(buff, binary.BigEndian, a); err != nil {
 		return false
 	}
 	return true
 }
 
 //Find busca recursivamente un archivo según el path dado
+//TODO: Añadirle más lógica a la función Find
 func (a *Avd) Find(path string) int32 {
 	//Verifica si el path es igual a "/"
 	if path == "/" {
 		return 0
 	}
 	//Valida el path
-	nPath, flag := validatePath(path)
-	if !flag {
-		color.New(color.FgHiYellow).Printf("     '%v' no es un directorio\n", path)
-		return -1
-	}
+	// nPath, flag := validatePath(path)
+	// if !flag {
+	// 	color.New(color.FgHiYellow).Printf("     '%v' no es un directorio\n", path)
+	// 	return -1
+	// }
 
-	//Recorre el avd buscando coincidencias
+	// //Recorre el avd buscando coincidencias
+	return 0
 }
 
 //Tour los puntero de avd, buscando coincidencia con los nombre en
