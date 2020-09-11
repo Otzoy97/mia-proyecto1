@@ -2,7 +2,8 @@ package lwh
 
 import (
 	"bytes"
-	"time"
+	"encoding/binary"
+	"unsafe"
 )
 
 //Dd ...
@@ -11,34 +12,53 @@ type Dd struct {
 	ApDetalleDirectorio int32
 }
 
-//DdFile ...
-type DdFile struct {
-	FileNombre          [25]byte
-	FileApInodo         int32
-	FileDateCreacion    [15]byte
-	FileDateModficacion [15]byte
-}
-
-//DataBlock ...
-type DataBlock struct {
-	Data [25]byte
-}
-
-//NewDdFile configura los atributos de DdFile
-func (d *DdFile) NewDdFile(name string) {
-	copy(d.FileNombre[:], name)
-	tm, _ := time.Now().GobEncode()
-	copy(d.FileDateCreacion[:], tm)
-	copy(d.FileDateModficacion[:], tm)
-}
-
-//getBdData convierte el contenido del archivo en una cadena
-func (d *DataBlock) getBdData() string {
-	//Recupera los bytes hasta encontrar un caracter nulo
-	idxEnd := bytes.IndexByte(d.Data[:], 0)
-	if idxEnd == -1 {
-		idxEnd = len(d.Data)
+//ReadDd recupera la información del detalle de directorio
+//Par que tenga exito el puntero de archivo debe estar
+//previamente puesto en posición con file.Seek
+func (d *Dd) ReadDd() bool {
+	arr := make([]byte, int(unsafe.Sizeof(*d)))
+	if _, err := virtualDisk.Read(arr); err != nil {
+		return false
 	}
-	temName := d.Data[:idxEnd]
-	return string(temName)
+	buff := bytes.NewBuffer(arr)
+	if err := binary.Read(buff, binary.BigEndian, d); err != nil {
+		return false
+	}
+	return true
+}
+
+//Tour busca en una coincidencia con el nombre dado
+//devuelve un puntero al primer inodo del archivo
+func (d *Dd) Tour(name string) int64 {
+	//Si el nombre es vacío retorna -1
+	if name == "" {
+		return -1
+	}
+	for _, vDet := range d.ArrayFiles {
+		//recupera el nombre de vdet
+		idxEnd := bytes.IndexByte(vDet.FileNombre[:], 0)
+		if idxEnd == -1 {
+			idxEnd = 25
+		}
+		tempName := string(vDet.FileNombre[:idxEnd])
+		if tempName == name {
+			return int64(vDet.FileApInodo)
+		}
+	}
+	//Si el apDetalledirectorio no es cero
+	if d.ApDetalleDirectorio != 0 {
+		//Se mueve al puntero y realiza una búsqueda
+		offset := int64(vdSuperBoot.SbApDetalleDirectorio) + int64(d.ApDetalleDirectorio)*int64(unsafe.Sizeof(Dd{}))
+		virtualDisk.Seek(offset, 0)
+		var dd Dd
+		//Lee el detalle de directorio
+		if !dd.ReadDd() {
+			//No se pudo leer
+			return -1
+		}
+		//Busca recursivamente el archivo
+		return dd.Tour(name)
+	}
+	//No encontró nada, devuelve -1
+	return -1
 }
