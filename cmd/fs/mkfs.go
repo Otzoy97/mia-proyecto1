@@ -107,6 +107,7 @@ func (m *Mkfs) setStructs(file *os.File, name string, path string) bool {
 	//Crea el AVD raíz
 	var avd lwh.Avd
 	avd.NewAvd("/", "664", 1, 1)
+	avd.ApDetalleDirectorio = 0
 	//Crea un detalle de directorio para la raiz
 	dd := lwh.Dd{ApDetalleDirectorio: -1}
 	//Crea el archivo user.txt para el directorio raiz

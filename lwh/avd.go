@@ -28,6 +28,7 @@ func (a *Avd) NewAvd(name, auth string, proper, gid int) {
 	copy(a.FechaCreacion[:], tm)
 	copy(a.NombreDirectorio[:], name)
 	a.ApArbolVirtualDirectorio = -1
+	a.ApDetalleDirectorio = -1
 	a.Proper = int32(proper)
 	a.Gid = int32(gid)
 	copy(a.Auth[:], auth)
@@ -66,12 +67,25 @@ func (a *Avd) Find(path string) int32 {
 	return 0
 }
 
-//Tour los puntero de avd, buscando coincidencia con los nombre en
-//dir. Devuelve el punteo al último avd al que hace coincidencia
-func (a *Avd) Tour(dir []string) int64 {
+//Tour busca en los puntero de avd y dd aluguna coincidencia con los nombres en
+//el slice dir. Devuelve el puntero y el tipo de dato (avd o dd)
+//0 - directorio 1 - archivo  2 - error
+func (a *Avd) Tour(dir []string) (int64, byte) {
 	//No hay nombre para leer
 	if len(dir) == 0 {
-		return -1
+		return -1, 2
+	}
+	//Busca en el detalle de directorio
+	if a.ApDetalleDirectorio != -1 {
+		//Se coloca en la posición del apuntador de detalle de directorio
+		offset := int64(vdSuperBoot.SbApArbolDirectorio + a.ApDetalleDirectorio*int32(unsafe.Sizeof(Dd{})))
+		virtualDisk.Seek(offset, 0)
+		var dd Dd
+		//Lee el detalle de directorio
+		dd.ReadDd()
+		//FIXME: si empieza a buscar detalle directorio primero, nunca
+		//podría encontrar una coincidencia ya que luego no podría
+		//encontrar una coincidencia en el resto de directorios
 	}
 	//Busca en el array del avd actual
 	for _, avd := range a.ApArraySubdirectorios {
@@ -85,7 +99,7 @@ func (a *Avd) Tour(dir []string) int64 {
 			//Lee el avd
 			if !newAvd.ReadAvd() {
 				//No se leyó correctamente
-				return -1
+				return -1, 2
 			}
 			//Convierte el array de bytes en string
 			idxEnd := bytes.IndexByte(newAvd.NombreDirectorio[:], 0)
@@ -101,7 +115,7 @@ func (a *Avd) Tour(dir []string) int64 {
 					return newAvd.Tour(dir[1:])
 				}
 				//Ya no hay nombres por buscar
-				return offset
+				return offset, 0
 			}
 		}
 	}
@@ -114,13 +128,13 @@ func (a *Avd) Tour(dir []string) int64 {
 		//Lee el avd
 		if !newAvd.ReadAvd() {
 			//No se leyó correctamente
-			return -1
+			return 0, 2
 		}
 		//Vuelve a llamar esta misma función
 		return newAvd.Tour(dir)
 	}
 	//No se encontró ninguna coincidencia
-	return -1
+	return 0, 2
 }
 
 //validatePath el offset es la posición la cual hay que leer
