@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 	"unsafe"
+
+	"github.com/fatih/color"
 )
 
 //Avd ...
@@ -34,43 +36,58 @@ func (a *Avd) NewAvd(name, auth string, proper, gid int) {
 	copy(a.Auth[:], auth)
 }
 
-//ReadAvd ...
-//Para que la lectura sea exitosa, el apuntador de virtualdisk
-//debe estar en la posición de un avd
-func (a *Avd) ReadAvd() bool {
+//ReadAvd recupera la información del avd especificado
+func (a *Avd) ReadAvd(n int32) (bool, int64) {
+	//Se mueve a la posición especificada
+	offset := int64(vdSuperBoot.SbApArbolDirectorio + n*int32(unsafe.Sizeof(*a)))
+	virtualDisk.Seek(offset, 0)
+	//Lee el struct
 	arr := make([]byte, int(unsafe.Sizeof(*a)))
 	if _, err := virtualDisk.Read(arr); err != nil {
-		return false
+		return false, -1
 	}
 	buff := bytes.NewBuffer(arr)
 	if err := binary.Read(buff, binary.BigEndian, a); err != nil {
+		return false, -1
+	}
+	return true, offset
+}
+
+//WriteAvd escribe el avd en al posición especificada
+func (a *Avd) WriteAvd(n int) bool {
+	//Se mueve a la posición del disco
+	offset := int64(vdSuperBoot.SbApArbolDirectorio) + int64(n*int(unsafe.Sizeof(*a)))
+	virtualDisk.Seek(offset, 0)
+	//Escribe el struct en un stream de bytes
+	bin := new(bytes.Buffer)
+	binary.Write(bin, binary.BigEndian, a)
+	//Escribe el struct en el disco
+	if _, err := virtualDisk.Write(bin.Bytes()); err != nil {
 		return false
 	}
 	return true
 }
 
 //Find busca recursivamente un archivo según el path dado
-//TODO: Añadirle más lógica a la función Find
-func (a *Avd) Find(path string) int32 {
+func (a *Avd) Find(path string) (int64, byte) {
 	//Verifica si el path es igual a "/"
 	if path == "/" {
-		return 0
+		return -1, 2
 	}
 	//Valida el path
-	// nPath, flag := validatePath(path)
-	// if !flag {
-	// 	color.New(color.FgHiYellow).Printf("     '%v' no es un directorio\n", path)
-	// 	return -1
-	// }
-
-	// //Recorre el avd buscando coincidencias
-	return 0
+	nPath, flag := validatePath(path)
+	if !flag {
+		color.New(color.FgHiYellow).Printf("     '%v' no es un directorio\n", path)
+		return -1, 2
+	}
+	//Recorre el avd buscando coincidencias
+	return a.tourAVD(nPath)
 }
 
-//Tour busca en los puntero de avd y dd aluguna coincidencia con los nombres en
+//tourAVD busca en los puntero de avd y dd aluguna coincidencia con los nombres en
 //el slice dir. Devuelve el puntero y el tipo de dato (avd o dd)
 //0 - directorio 1 - archivo  2 - error
-func (a *Avd) Tour(dir []string) (int64, byte) {
+func (a *Avd) tourAVD(dir []string) (int64, byte) {
 	//No hay nombre para leer
 	if len(dir) == 0 {
 		return -1, 2
@@ -83,21 +100,21 @@ func (a *Avd) Tour(dir []string) (int64, byte) {
 		var dd Dd
 		//Lee el detalle de directorio
 		dd.ReadDd()
-		//FIXME: si empieza a buscar detalle directorio primero, nunca
-		//podría encontrar una coincidencia ya que luego no podría
-		//encontrar una coincidencia en el resto de directorios
+		//Busca el primer elemento del array
+		off := dd.tourDD(dir[0])
+		if off != -1 {
+			return off, 1
+		}
 	}
 	//Busca en el array del avd actual
 	for _, avd := range a.ApArraySubdirectorios {
 		//El avd existe
 		if avd != 0 {
 			//Si no es cero, entonces debe apuntar a algún lado
-			//Mueve el apuntador de disco a esa posición y recupera el avd
-			offset := int64(vdSuperBoot.SbApArbolDirectorio + avd*int32(unsafe.Sizeof(Avd{})))
-			virtualDisk.Seek(offset, 0)
 			var newAvd Avd
 			//Lee el avd
-			if !newAvd.ReadAvd() {
+			flag, offset := newAvd.ReadAvd(avd)
+			if !flag {
 				//No se leyó correctamente
 				return -1, 2
 			}
@@ -112,7 +129,7 @@ func (a *Avd) Tour(dir []string) (int64, byte) {
 				//El primer nombre es igual
 				if len(dir) > 1 {
 					//Aun hay nombres por buscar
-					return newAvd.Tour(dir[1:])
+					return newAvd.tourAVD(dir[1:])
 				}
 				//Ya no hay nombres por buscar
 				return offset, 0
@@ -122,16 +139,15 @@ func (a *Avd) Tour(dir []string) (int64, byte) {
 	//Busca en el apuntador indirecto
 	if a.ApArbolVirtualDirectorio != -1 {
 		//Mueve el apuntador de disco a esa posición y recupera el avd
-		offset := int64(vdSuperBoot.SbApArbolDirectorio + a.ApArbolVirtualDirectorio*int32(unsafe.Sizeof(Avd{})))
-		virtualDisk.Seek(offset, 0)
 		var newAvd Avd
 		//Lee el avd
-		if !newAvd.ReadAvd() {
+		flag, _ := newAvd.ReadAvd(a.ApArbolVirtualDirectorio)
+		if !flag {
 			//No se leyó correctamente
-			return 0, 2
+			return -1, 2
 		}
 		//Vuelve a llamar esta misma función
-		return newAvd.Tour(dir)
+		return newAvd.tourAVD(dir)
 	}
 	//No se encontró ninguna coincidencia
 	return 0, 2
