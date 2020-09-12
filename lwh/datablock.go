@@ -1,6 +1,10 @@
 package lwh
 
-import "bytes"
+import (
+	"bytes"
+	"encoding/binary"
+	"unsafe"
+)
 
 //DataBlock ...
 type DataBlock struct {
@@ -16,4 +20,34 @@ func (d *DataBlock) getBdData() string {
 	}
 	temName := d.Data[:idxEnd]
 	return string(temName)
+}
+
+//readDB lee el struct Datablock desde el archivo virtualDisk
+func (d *DataBlock) readDB(n int) bool {
+	offset := int64(vdSuperBoot.SbApBloques) + int64(n*int(unsafe.Sizeof(*d)))
+	virtualDisk.Seek(offset, 0)
+	darr := make([]byte, int(unsafe.Sizeof(*d)))
+	if _, err := virtualDisk.Read(darr); err != nil {
+		return false
+	}
+	buff := bytes.NewBuffer(darr)
+	if err := binary.Read(buff, binary.BigEndian, d); err != nil {
+		return false
+	}
+	return true
+}
+
+//writeDB escribe el struct a el archivo virtualDisk
+func (d *DataBlock) writeDB(n int) bool {
+	//Se mueve a la posición del disco
+	offset := int64(vdSuperBoot.SbApBloques) + int64(n*int(unsafe.Sizeof(*d)))
+	virtualDisk.Seek(offset, 0)
+	//Escribe el struct en un stream de bytes
+	bin := new(bytes.Buffer)
+	binary.Write(bin, binary.BigEndian, d)
+	//Escribe el struct en el disco
+	if _, err := virtualDisk.Write(bin.Bytes()); err != nil {
+		return false
+	}
+	return true
 }
