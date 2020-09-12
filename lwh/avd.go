@@ -54,9 +54,9 @@ func (a *Avd) ReadAvd(n int32) (bool, int64) {
 }
 
 //WriteAvd escribe el avd en al posición especificada
-func (a *Avd) WriteAvd(n int) bool {
+func (a *Avd) WriteAvd(n int32) bool {
 	//Se mueve a la posición del disco
-	offset := int64(vdSuperBoot.SbApArbolDirectorio) + int64(n*int(unsafe.Sizeof(*a)))
+	offset := int64(vdSuperBoot.SbApArbolDirectorio + n*int32(unsafe.Sizeof(*a)))
 	virtualDisk.Seek(offset, 0)
 	//Escribe el struct en un stream de bytes
 	bin := new(bytes.Buffer)
