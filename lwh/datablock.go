@@ -23,8 +23,8 @@ func (d *DataBlock) getBdData() string {
 }
 
 //readDB lee el struct Datablock desde el archivo virtualDisk
-func (d *DataBlock) readDB(n int) bool {
-	offset := int64(vdSuperBoot.SbApBloques) + int64(n*int(unsafe.Sizeof(*d)))
+func (d *DataBlock) readDB(n int32) bool {
+	offset := int64(vdSuperBoot.SbApBloques + n*int32(unsafe.Sizeof(*d)))
 	virtualDisk.Seek(offset, 0)
 	darr := make([]byte, int(unsafe.Sizeof(*d)))
 	if _, err := virtualDisk.Read(darr); err != nil {
@@ -38,9 +38,9 @@ func (d *DataBlock) readDB(n int) bool {
 }
 
 //writeDB escribe el struct a el archivo virtualDisk
-func (d *DataBlock) writeDB(n int) bool {
+func (d *DataBlock) writeDB(n int32) bool {
 	//Se mueve a la posición del disco
-	offset := int64(vdSuperBoot.SbApBloques) + int64(n*int(unsafe.Sizeof(*d)))
+	offset := int64(vdSuperBoot.SbApBloques + n*int32(unsafe.Sizeof(*d)))
 	virtualDisk.Seek(offset, 0)
 	//Escribe el struct en un stream de bytes
 	bin := new(bytes.Buffer)
