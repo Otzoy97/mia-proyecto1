@@ -27,9 +27,9 @@ func (d *Dd) ReadDd() bool {
 	return true
 }
 
-//Tour busca en una coincidencia con el nombre dado
+//tourDD busca en una coincidencia con el nombre dado
 //devuelve un puntero al primer inodo del archivo
-func (d *Dd) Tour(name string) int64 {
+func (d *Dd) tourDD(name string) int64 {
 	//Si el nombre es vacío retorna -1
 	if name == "" {
 		return -1
@@ -57,7 +57,7 @@ func (d *Dd) Tour(name string) int64 {
 			return -1
 		}
 		//Busca recursivamente el archivo
-		return dd.Tour(name)
+		return dd.tourDD(name)
 	}
 	//No encontró nada, devuelve -1
 	return -1
