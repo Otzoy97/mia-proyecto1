@@ -7,9 +7,15 @@ import (
 	"github.com/fatih/color"
 )
 
+//User ...
+type User struct {
+	Grupo, Usuario int32
+}
+
 var virtualDisk *os.File
 var vdSuperBoot Superboot
 var vdPartition disk.Partition
+var logUser User
 
 //MountVDisk crea un puntero al archivo que especifica path.
 //Todo el paquete lwh tendrá acceso al archivo, facilitando
@@ -145,4 +151,10 @@ func Getlogs() []Log {
 		lg.ReadLog()
 	}
 	return blog
+}
+
+//Login almacena el uid y el gid
+func Login(uid, gid int32) {
+	logUser.Grupo = gid
+	logUser.Usuario = uid
 }
