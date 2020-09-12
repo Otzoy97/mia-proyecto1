@@ -31,9 +31,9 @@ func (i *Inodo) NewInodo(pInodo, proper, gid int, auth string) {
 	copy(i.Auth[:], auth)
 }
 
-//getCont lee cada uno de los bloques y concatena el
+//GetCont lee cada uno de los bloques y concatena el
 //contenido que alojan
-func (i *Inodo) getCont() string {
+func (i *Inodo) GetCont() string {
 	//Alojará el contenido del archivo
 	var strd strings.Builder
 	//Viaja a la posición del inodo que especifica el
@@ -54,16 +54,16 @@ func (i *Inodo) getCont() string {
 	if i.ApIndirecto != -1 {
 		//Lee el inodo
 		var in Inodo
-		if in.readInodo(i.ApIndirecto) {
+		if in.ReadInodo(i.ApIndirecto) {
 			//Concatena el resultado
-			strd.WriteString(in.getCont())
+			strd.WriteString(in.GetCont())
 		}
 	}
 	return strd.String()
 }
 
-//readInodo lee el inodo en la posición n
-func (i *Inodo) readInodo(n int32) bool {
+//ReadInodo lee el inodo en la posición n
+func (i *Inodo) ReadInodo(n int32) bool {
 	//Se mueve a la posición especificada
 	offset := int64(vdSuperBoot.SbApTablaInodo + n*int32(unsafe.Sizeof(*i)))
 	virtualDisk.Seek(offset, 0)
@@ -79,8 +79,8 @@ func (i *Inodo) readInodo(n int32) bool {
 	return true
 }
 
-//writeIniodo lee el inodo en la posición n
-func (i *Inodo) writeInodo(n int32) bool {
+//WriteInodo lee el inodo en la posición n
+func (i *Inodo) WriteInodo(n int32) bool {
 	//Se mueve a la posicion del disco
 	offset := int64(vdSuperBoot.SbApTablaInodo + n*int32(unsafe.Sizeof(*i)))
 	virtualDisk.Seek(offset, 0)

@@ -37,20 +37,20 @@ func (a *Avd) NewAvd(name, auth string, proper, gid int) {
 }
 
 //ReadAvd recupera la información del avd especificado
-func (a *Avd) ReadAvd(n int32) (bool, int64) {
+func (a *Avd) ReadAvd(n int32) bool {
 	//Se mueve a la posición especificada
 	offset := int64(vdSuperBoot.SbApArbolDirectorio + n*int32(unsafe.Sizeof(*a)))
 	virtualDisk.Seek(offset, 0)
 	//Lee el struct
 	arr := make([]byte, int(unsafe.Sizeof(*a)))
 	if _, err := virtualDisk.Read(arr); err != nil {
-		return false, -1
+		return false
 	}
 	buff := bytes.NewBuffer(arr)
 	if err := binary.Read(buff, binary.BigEndian, a); err != nil {
-		return false, -1
+		return false
 	}
-	return true, offset
+	return true
 }
 
 //WriteAvd escribe el avd en al posición especificada
@@ -68,8 +68,10 @@ func (a *Avd) WriteAvd(n int32) bool {
 	return true
 }
 
-//Find busca recursivamente un archivo según el path dado
-func (a *Avd) Find(path string) (int64, byte) {
+//Find busca recursivamente un archivo según el path dado.
+//Devuelve el puntero y el tipo de dato (avd o inodo)
+//0 - directorio 1 - archivo  2 - error
+func (a *Avd) Find(path string) (int32, byte) {
 	//Verifica si el path es igual a "/"
 	if path == "/" {
 		return -1, 2
@@ -85,36 +87,33 @@ func (a *Avd) Find(path string) (int64, byte) {
 }
 
 //tourAVD busca en los puntero de avd y dd aluguna coincidencia con los nombres en
-//el slice dir. Devuelve el puntero y el tipo de dato (avd o dd)
+//el slice dir. Devuelve el puntero y el tipo de dato (avd o inodo)
 //0 - directorio 1 - archivo  2 - error
-func (a *Avd) tourAVD(dir []string) (int64, byte) {
+func (a *Avd) tourAVD(dir []string) (int32, byte) {
 	//No hay nombre para leer
 	if len(dir) == 0 {
 		return -1, 2
 	}
 	//Busca en el detalle de directorio
 	if a.ApDetalleDirectorio != -1 {
-		//Se coloca en la posición del apuntador de detalle de directorio
-		offset := int64(vdSuperBoot.SbApArbolDirectorio + a.ApDetalleDirectorio*int32(unsafe.Sizeof(Dd{})))
-		virtualDisk.Seek(offset, 0)
 		var dd Dd
 		//Lee el detalle de directorio
-		dd.ReadDd()
-		//Busca el primer elemento del array
-		off := dd.tourDD(dir[0])
-		if off != -1 {
-			return off, 1
+		if dd.ReadDd(a.ApDetalleDirectorio) {
+			//Busca el primer elemento del array
+			off := dd.tourDD(dir[0])
+			if off != -1 {
+				return off, 1
+			}
 		}
 	}
 	//Busca en el array del avd actual
-	for _, avd := range a.ApArraySubdirectorios {
+	for _, pAvd := range a.ApArraySubdirectorios {
 		//El avd existe
-		if avd != 0 {
+		if pAvd != 0 {
 			//Si no es cero, entonces debe apuntar a algún lado
 			var newAvd Avd
 			//Lee el avd
-			flag, offset := newAvd.ReadAvd(avd)
-			if !flag {
+			if !newAvd.ReadAvd(pAvd) {
 				//No se leyó correctamente
 				return -1, 2
 			}
@@ -132,7 +131,7 @@ func (a *Avd) tourAVD(dir []string) (int64, byte) {
 					return newAvd.tourAVD(dir[1:])
 				}
 				//Ya no hay nombres por buscar
-				return offset, 0
+				return pAvd, 0
 			}
 		}
 	}
@@ -141,8 +140,7 @@ func (a *Avd) tourAVD(dir []string) (int64, byte) {
 		//Mueve el apuntador de disco a esa posición y recupera el avd
 		var newAvd Avd
 		//Lee el avd
-		flag, _ := newAvd.ReadAvd(a.ApArbolVirtualDirectorio)
-		if !flag {
+		if !newAvd.ReadAvd(a.ApArbolVirtualDirectorio) {
 			//No se leyó correctamente
 			return -1, 2
 		}
@@ -150,11 +148,10 @@ func (a *Avd) tourAVD(dir []string) (int64, byte) {
 		return newAvd.tourAVD(dir)
 	}
 	//No se encontró ninguna coincidencia
-	return 0, 2
+	return -1, 2
 }
 
 //validatePath el offset es la posición la cual hay que leer
-//el tipo devuelve si es una avd o un inodo
 func validatePath(path string) ([]string, bool) {
 	//Se asegura que sea un directorio válido
 	match, _ := regexp.Match(`^(/[^/ ]*)+/?$`, []byte(path))
