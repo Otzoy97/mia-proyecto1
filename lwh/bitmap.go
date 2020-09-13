@@ -1,12 +1,19 @@
 package lwh
 
-import "github.com/fatih/color"
+import (
+	"sort"
+
+	"github.com/fatih/color"
+)
 
 //Bitmap ...
 type Bitmap []byte
 
 //BmType ...
 type BmType byte
+
+//Fit ...
+type Fit byte
 
 //BmType ...
 const (
@@ -15,6 +22,80 @@ const (
 	BitmapInodo        = 3
 	BitmapBd           = 4
 )
+
+//Fit
+const (
+	WorstFit Fit = 1
+	BestFit  Fit = 2
+	FirstFit Fit = 3
+)
+
+//FindSpaces busca la primera posición libre en el bitmap que cumpla con el Fit f
+//y que indique el inicio de espacio para albergar la cantidad 'spaces' de structs
+func (b *Bitmap) FindSpaces(f Fit, spaces int) (int32, bool) {
+	var dict map[int]int
+	var cte int
+	//Busca los espacios libres y desde ahí cuenta cuántos espacios libres hay
+	for i, val := range *b {
+		if val == 0 {
+			dict[cte+1]++
+		} else {
+			cte = i
+		}
+	}
+	//Arreglo para almacenar lasllaves
+	keys := make([]int, len(dict))
+	i := 0
+	//Almacena todas las llaves de dict
+	for k := range dict {
+		keys[i] = k
+		i++
+	}
+	//Ordena el arreglo keys
+	sort.Ints(keys)
+	switch f {
+	case WorstFit:
+		//Debe encontrar el espacio más grande
+		var idxValue int
+		//Inicializa un valor muy pequeño
+		minValue := 0
+		for _, v := range keys {
+			//Busca el valor más grande que sea mayor o igual al valor de spaces
+			if minValue < dict[v] && dict[v] >= spaces {
+				minValue = dict[v]
+				idxValue = v
+			}
+		}
+		return int32(idxValue), true
+	case FirstFit:
+		//Debe encontrar el primer valor que se mayor o igual a spaces
+		for _, v := range keys {
+			//Busca el primer valor que sea mayor o igual a spaces
+			if dict[v] >= spaces {
+				return int32(v), true
+			}
+		}
+	case BestFit:
+		//Debe buscar el espacio más pequeño que sea mayor o igual al valor de spaces
+		var idxValue int
+		//Inicializa un valor muy grande
+		maxValue := int(vdSuperBoot.SbBloquesCount)
+		for _, v := range keys {
+			//Busca el valor más pequeño que más se acerce al valor de spaces
+			if maxValue > dict[v] && dict[v] >= spaces {
+				if dict[v] == spaces {
+					//Si encuentra un valor igual, retorna inmediatamente ese valor
+					return int32(v), true
+				} else if dict[v] > spaces {
+					idxValue = v
+					maxValue = dict[v]
+				}
+			}
+		}
+		return int32(idxValue), true
+	}
+	return -1, false
+}
 
 //Getbitmap recupera el stream de bytes que representan los espacios
 //llenos y vacios del respectivo tipo de bitmap
