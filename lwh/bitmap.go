@@ -21,12 +21,17 @@ const (
 func Getbitmap(op BmType) []byte {
 	//Recupera el puntero del bitmap y el tamaño
 	point, size := whichBM(op)
+	if point == -1 {
+		color.New(color.FgHiYellow).Printf("     No se pudo recuperar el bitmap %v\n", virtualDisk.Name())
+		return []byte{}
+	}
 	//Coloca el punteo de disco en posición
 	virtualDisk.Seek(int64(point), 0)
 	b := make([]byte, size)
 	//Lee el bit map
 	if _, err := virtualDisk.Read(b); err != nil {
-		color.New(color.FgHiYellow).Printf("     No se pudo recuperar el bitmap de directorio %v\n     %v\n", virtualDisk.Name(), err.Error())
+		color.New(color.FgHiYellow).Printf("     No se pudo recuperar el bitmap %v\n", virtualDisk.Name())
+		return []byte{}
 	}
 	return b
 }
@@ -43,5 +48,5 @@ func whichBM(t BmType) (int32, int32) {
 	case BitmapInodo:
 		return vdSuperBoot.SbApBitMapaTablaInodo, vdSuperBoot.SbInodosCount
 	}
-	return 0, -1
+	return -1, 0
 }
