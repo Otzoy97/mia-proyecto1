@@ -29,6 +29,10 @@ func main() {
 		//asi poder realizar operaciones entre cadenas
 		aux = string(line)
 		aux = strings.TrimSpace(aux)
+		//Terminará la ejecución del programa
+		if strings.ToLower(aux) == "exit" || strings.ToLower(aux) == "quit" {
+			return
+		}
 		//Une la entrada del usuario a auxLine
 		auxLine = append(auxLine, line...)
 		//Si en line viene los caracteres '\*'
