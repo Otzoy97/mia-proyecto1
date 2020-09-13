@@ -90,34 +90,6 @@ func Exauth(n int8) bool {
 	return n&1 != 0
 }
 
-//Getbitmap 0-arbdir 1-detdir 2-inode 3-block
-func Getbitmap(op byte) []byte {
-	var spc int
-	switch op {
-	case 0:
-		//Arbol de directorio
-		virtualDisk.Seek(int64(vdSuperBoot.SbApBitMapArbolDirectorio), 0)
-		spc = int(vdSuperBoot.SbArbolvirtualCount)
-	case 1:
-		//Detalle de directorio
-		virtualDisk.Seek(int64(vdSuperBoot.SbApBitmapDetalleDirectorio), 0)
-		spc = int(vdSuperBoot.SbDetalleDirectorioCount)
-	case 2:
-		//Tabla de inodos
-		virtualDisk.Seek(int64(vdSuperBoot.SbApBitMapaTablaInodo), 0)
-		spc = int(vdSuperBoot.SbInodosCount)
-	case 3:
-		//Bloque de datos
-		virtualDisk.Seek(int64(vdSuperBoot.SbApBitmapBloques), 0)
-		spc = int(vdSuperBoot.SbBloquesCount)
-	}
-	b := make([]byte, spc)
-	if _, err := virtualDisk.Read(b); err != nil {
-		color.New(color.FgHiYellow).Printf("     No se pudo recuperar el bitmap de directorio %v\n     %v\n", virtualDisk.Name(), err.Error())
-	}
-	return b
-}
-
 //GetSuperboot devuelve una referencia l superboot montado
 func GetSuperboot() *Superboot {
 	return &vdSuperBoot
