@@ -24,15 +24,15 @@ type Avd struct {
 }
 
 //NewAvd configura un nuevo Arbol virtual de directorio
-func (a *Avd) NewAvd(name, auth string, proper, gid int) {
+func (a *Avd) NewAvd(name, auth string, proper, gid int32) {
 	//Establece la fecha de creación
 	tm, _ := time.Now().GobEncode()
 	copy(a.FechaCreacion[:], tm)
 	copy(a.NombreDirectorio[:], name)
 	a.ApArbolVirtualDirectorio = -1
 	a.ApDetalleDirectorio = -1
-	a.Proper = int32(proper)
-	a.Gid = int32(gid)
+	a.Proper = proper
+	a.Gid = gid
 	copy(a.Auth[:], auth)
 }
 
@@ -70,7 +70,11 @@ func (a *Avd) WriteAvd(n int32) bool {
 
 //Find busca recursivamente un archivo según el path dado.
 //Devuelve el puntero y el tipo de dato (avd o inodo)
-//0 - directorio 1 - archivo  2 - error
+//0 - directorio
+//1 - archivo
+//2 - no se encontró
+//3 - no es directorio
+//4 - no se pudo leer algo
 func (a *Avd) Find(path string) (int32, byte) {
 	//Verifica si el path es igual a "/"
 	if path == "/" {
@@ -80,7 +84,7 @@ func (a *Avd) Find(path string) (int32, byte) {
 	nPath, flag := validatePath(path)
 	if !flag {
 		color.New(color.FgHiYellow).Printf("     '%v' no es un directorio\n", path)
-		return -1, 2
+		return -1, 3
 	}
 	//Recorre el avd buscando coincidencias
 	return a.tourAVD(nPath)
@@ -88,7 +92,11 @@ func (a *Avd) Find(path string) (int32, byte) {
 
 //tourAVD busca en los puntero de avd y dd aluguna coincidencia con los nombres en
 //el slice dir. Devuelve el puntero y el tipo de dato (avd o inodo)
-//0 - directorio 1 - archivo  2 - error
+//0 - directorio
+//1 - archivo
+//2 - no se encontró
+//3 - no es directorio
+//4 - no se pudo leer algo
 func (a *Avd) tourAVD(dir []string) (int32, byte) {
 	//No hay nombre para leer
 	if len(dir) == 0 {
@@ -104,6 +112,8 @@ func (a *Avd) tourAVD(dir []string) (int32, byte) {
 			if off != -1 {
 				return off, 1
 			}
+		} else {
+			return -1, 4
 		}
 	}
 	//Busca en el array del avd actual
@@ -115,7 +125,7 @@ func (a *Avd) tourAVD(dir []string) (int32, byte) {
 			//Lee el avd
 			if !newAvd.ReadAvd(pAvd) {
 				//No se leyó correctamente
-				return -1, 2
+				return -1, 4
 			}
 			//Convierte el array de bytes en string
 			idxEnd := bytes.IndexByte(newAvd.NombreDirectorio[:], 0)
@@ -142,7 +152,7 @@ func (a *Avd) tourAVD(dir []string) (int32, byte) {
 		//Lee el avd
 		if !newAvd.ReadAvd(a.ApArbolVirtualDirectorio) {
 			//No se leyó correctamente
-			return -1, 2
+			return -1, 4
 		}
 		//Vuelve a llamar esta misma función
 		return newAvd.tourAVD(dir)
@@ -151,10 +161,67 @@ func (a *Avd) tourAVD(dir []string) (int32, byte) {
 	return -1, 2
 }
 
+//CreateDir true si logra crear el directorio, falso si no
+//0 - ya existe el directorio
+//1 - se logró crear el directorio
+//2 - no se pudo crear el directorio
+//3 - el path no era válido
+//4 - no se pudo leer el disco
+func (a *Avd) CreateDir(from string, to []string) (bool, int) {
+	//Verifica que 'to', tenga datos
+	if len(to) == 0 {
+		//Si llega a este punto, es porque no se creó nada
+		//0 - ya existe el directorio
+		return false, 0
+	}
+	//Arma el path a buscar
+	from += strings.Join(to[:1], "/")
+	//Busca el path, utilizando 'from'
+	pAvd, tipe := a.Find(from)
+	if tipe == 3 {
+		//3 - el path no era válido
+		return false, 3
+	} else if tipe == 4 {
+		//4 - no se pudo leer el disco
+		return false, 4
+	} else if tipe == 0 {
+		//Si encuentra algo debe ser un directorio, si no es un error
+		var newAvd Avd
+		//Recupera la información del nuevo avd
+		newAvd.ReadAvd(pAvd)
+		//Crea el directorio en ese avd
+		return newAvd.CreateDir(from, to[1:])
+	} else if tipe == 2 {
+		//No se encontró, entonces debe crearse
+		//Recupera el bitmap para el arbol de directorio
+		avdBm := Bitmap(Getbitmap(BitmapAvd))
+		if bmAp, flag := avdBm.FindSpaces(1); flag {
+			//Crea un nuevo avd
+			var newAvd Avd
+			newAvd.NewAvd(to[0], "664", logUser.uid, logUser.gid)
+			//Escribe el nuevo avd
+			if newAvd.WriteAvd(bmAp) {
+				//Escribe el bmp
+				if writeBM(BitmapAvd, bmAp) {
+					//Se creó correctamente el directorio
+					//Verifica si to, aún tiene datos
+					if len(to) > 0 {
+						return newAvd.CreateDir(from, to[1:])
+					}
+					return true, 1
+				}
+				return false, 2
+			}
+			return false, 2
+		}
+	}
+	return false, 2
+}
+
 //validatePath el offset es la posición la cual hay que leer
 func validatePath(path string) ([]string, bool) {
 	//Se asegura que sea un directorio válido
-	match, _ := regexp.Match(`^(/[^/ ]*)+/?$`, []byte(path))
+	match, _ := regexp.Match(`^(/[^/]*)+/?$`, []byte(path))
 	if !match {
 		//No es un directorio válido
 		return []string{}, false
