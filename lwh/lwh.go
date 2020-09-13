@@ -9,7 +9,8 @@ import (
 
 //User ...
 type User struct {
-	Grupo, Usuario int32
+	gid, uid int32
+	active   bool
 }
 
 var virtualDisk *os.File
@@ -154,7 +155,23 @@ func Getlogs() []Log {
 }
 
 //Login almacena el uid y el gid
-func Login(uid, gid int32) {
-	logUser.Grupo = gid
-	logUser.Usuario = uid
+func Login(uid, gid int32) bool {
+	if !logUser.active {
+		logUser.gid = gid
+		logUser.uid = uid
+		logUser.active = true
+		return true
+	}
+	return false
+}
+
+//Logout limpia los datos de uid y gid, si hubiera
+func Logout() bool {
+	if logUser.active {
+		logUser.gid = 0
+		logUser.uid = 0
+		logUser.active = false
+		return true
+	}
+	return false
 }

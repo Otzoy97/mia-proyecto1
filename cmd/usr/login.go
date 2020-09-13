@@ -41,7 +41,7 @@ func (l *Login) Validate() bool {
 		flag = false
 	}
 	if !flag {
-		color.New(color.FgHiRed, color.Bold).Println("Login no se puede ejecutar")
+		color.New(color.FgHiRed, color.Bold).Println("Login no se puede ejecutar", "")
 		return false
 	}
 	return true
@@ -59,7 +59,7 @@ func (l *Login) Run() {
 	if typ == 2 || typ == 0 {
 		//Es un error, no se pudo recuperar el puntero
 		color.New(color.FgHiYellow).Printf("Login: no se pudo leer user.txt (%v)\n", l.Row)
-		color.New(color.FgHiRed, color.Bold).Println("Login fracasó")
+		color.New(color.FgHiRed, color.Bold).Println("Login fracasó", "")
 		return
 	}
 	//Si se pudo recuperar el puntero de user.txt
@@ -74,17 +74,22 @@ func (l *Login) Run() {
 		uid, group := findUser(txtSpli, l.usr, l.pwd)
 		if uid == 0 {
 			color.New(color.FgHiYellow).Printf("Login: el usuario '%v' no existe (%v)\n", l.usr, l.Row)
-			color.New(color.FgHiRed, color.Bold).Println("Login fracasó")
+			color.New(color.FgHiRed, color.Bold).Println("Login fracasó", "")
 			return
 		}
 		//Buscca el gid
 		gid := findGroup(txtSpli, group)
 		if gid == 0 {
 			color.New(color.FgHiYellow).Printf("Login: el grupo '%v' del usuario '%v' no existe (%v)\n", group, l.usr, l.Row)
-			color.New(color.FgHiRed, color.Bold).Println("Login fracasó")
+			color.New(color.FgHiRed, color.Bold).Println("Login fracasó", "")
 			return
 		}
 		//Almacena el usuario
-		lwh.Login(uid, gid)
+		if !lwh.Login(uid, gid) {
+			color.New(color.FgHiYellow).Printf("Login: ya hay una sesión activa. Cierre una sesión para iniciar otra (%v)\n", l.Row)
+			color.New(color.FgHiRed, color.Bold).Println("Login fracasó", "")
+			return
+		}
+		color.New(color.FgHiGreen, color.Bold).Printf("Login: '%v' inició sesión\n\n", l.usr)
 	}
 }
