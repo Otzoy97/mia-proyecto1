@@ -29,3 +29,18 @@ func Logout() bool {
 	}
 	return false
 }
+
+//IsActive indica si hay un usuario logeado
+func IsActive() bool {
+	return logUser.active
+}
+
+//GetGID retorna el id de grupo del usuario logeado
+func GetGID() int32 {
+	return logUser.gid
+}
+
+//GetUID retorna el id del usuario logeado
+func GetUID() int32 {
+	return logUser.uid
+}
