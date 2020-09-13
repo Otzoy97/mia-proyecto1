@@ -6,6 +6,7 @@ import (
 	cmdisk "mia-proyecto1/cmd/disk"
 	"mia-proyecto1/cmd/fs"
 	"mia-proyecto1/cmd/rep"
+	"mia-proyecto1/cmd/usr"
 	"reflect"
 
 	"github.com/fatih/color"
@@ -286,14 +287,13 @@ func (p *Parser) parserActions(s string, t int) {
 		p.Cmdlst = append(p.Cmdlst, &cmdisk.Rmdisk{Row: p.Lex.tokQueue[t].row, Oplst: map[string]interface{}{}})
 	case "Rep":
 		p.Cmdlst = append(p.Cmdlst, &rep.Rep{Row: p.Lex.tokQueue[t].row, Oplst: map[string]interface{}{}})
-	case "Recovery":
-	case "Loss":
 	case "Mkdir":
+		p.Cmdlst = append(p.Cmdlst, &fs.Mkdir{Row: p.Lex.tokQueue[t].row})
 	case "Mkfile":
-	case "Mkusr":
-	case "Mkgrp":
 	case "Logout":
+		p.Cmdlst = append(p.Cmdlst, &usr.Logout{Row: p.Lex.tokQueue[t].row})
 	case "Login":
+		p.Cmdlst = append(p.Cmdlst, &usr.Login{Row: p.Lex.tokQueue[t].row})
 	case "Mkfs":
 		p.Cmdlst = append(p.Cmdlst, &fs.Mkfs{Row: p.Lex.tokQueue[t].row})
 	case "Op":
