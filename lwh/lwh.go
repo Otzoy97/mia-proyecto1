@@ -7,16 +7,9 @@ import (
 	"github.com/fatih/color"
 )
 
-//User ...
-type User struct {
-	gid, uid int32
-	active   bool
-}
-
 var virtualDisk *os.File
 var vdSuperBoot Superboot
 var vdPartition disk.Partition
-var logUser User
 
 //MountVDisk crea un puntero al archivo que especifica path.
 //Todo el paquete lwh tendrá acceso al archivo, facilitando
@@ -128,50 +121,4 @@ func Getbitmap(op byte) []byte {
 //GetSuperboot devuelve una referencia l superboot montado
 func GetSuperboot() *Superboot {
 	return &vdSuperBoot
-}
-
-//Getlogs recupera todos los registros de log
-func Getlogs() []Log {
-	//Se posiciona al inicio del log y lee un registro de log
-	pLog := vdSuperBoot.SbApLog
-	virtualDisk.Seek(int64(pLog), 0)
-	var lg Log
-	//Le el primer Log
-	//Siempre habrá al menos 2 registros del log
-	lg.ReadLog()
-	//Prepara el array en donde se almacenarán los datos
-	var blog []Log
-	//Realiza un ciclo leyendo todos los siguientes log
-	//Si un log está "vacío" tendra LogTipoOperación = 0
-	//lo cual no es posible ya que solo puede tomar operaciones
-	//con enteros mayor a 0
-	for lg.LogTipoOperacion > 0 {
-		//Agrega el log que se leyó en la iteración anterior
-		blog = append(blog, lg)
-		//Lee un nuevo log
-		lg.ReadLog()
-	}
-	return blog
-}
-
-//Login almacena el uid y el gid
-func Login(uid, gid int32) bool {
-	if !logUser.active {
-		logUser.gid = gid
-		logUser.uid = uid
-		logUser.active = true
-		return true
-	}
-	return false
-}
-
-//Logout limpia los datos de uid y gid, si hubiera
-func Logout() bool {
-	if logUser.active {
-		logUser.gid = 0
-		logUser.uid = 0
-		logUser.active = false
-		return true
-	}
-	return false
 }

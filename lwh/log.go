@@ -73,3 +73,27 @@ func (l *Log) Getipo() string {
 	}
 	return "--"
 }
+
+//Getlogs recupera todos los registros de log
+func Getlogs() []Log {
+	//Se posiciona al inicio del log y lee un registro de log
+	pLog := vdSuperBoot.SbApLog
+	virtualDisk.Seek(int64(pLog), 0)
+	var lg Log
+	//Le el primer Log
+	//Siempre habrá al menos 2 registros del log
+	lg.ReadLog()
+	//Prepara el array en donde se almacenarán los datos
+	var blog []Log
+	//Realiza un ciclo leyendo todos los siguientes log
+	//Si un log está "vacío" tendra LogTipoOperación = 0
+	//lo cual no es posible ya que solo puede tomar operaciones
+	//con enteros mayor a 0
+	for lg.LogTipoOperacion > 0 {
+		//Agrega el log que se leyó en la iteración anterior
+		blog = append(blog, lg)
+		//Lee un nuevo log
+		lg.ReadLog()
+	}
+	return blog
+}
