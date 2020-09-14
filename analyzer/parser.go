@@ -290,6 +290,7 @@ func (p *Parser) parserActions(s string, t int) {
 	case "Mkdir":
 		p.Cmdlst = append(p.Cmdlst, &fs.Mkdir{Row: p.Lex.tokQueue[t].row})
 	case "Mkfile":
+		p.Cmdlst = append(p.Cmdlst, &fs.Mkfile{Row: p.Lex.tokQueue[t].row})
 	case "Logout":
 		p.Cmdlst = append(p.Cmdlst, &usr.Logout{Row: p.Lex.tokQueue[t].row})
 	case "Login":

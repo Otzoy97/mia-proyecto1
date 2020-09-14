@@ -16,7 +16,7 @@ func (r *Rep) CreateDir() []byte {
 	var root lwh.Avd
 	root.ReadAvd(0)
 	//Recupera el texto para el reporte
-	root.CreateRep(0)
+	root.CreateRep(0, false)
 	strD.WriteString("}\n")
 	return []byte(strD.String())
 }

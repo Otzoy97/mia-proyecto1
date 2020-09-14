@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"encoding/binary"
 	"unsafe"
+
+	"github.com/fatih/color"
 )
 
 //Dd ...
@@ -28,6 +30,55 @@ func (d *Dd) ReadDd(n int32) bool {
 		return false
 	}
 	return true
+}
+
+//WriteDd ...
+func (d *Dd) WriteDd(n int32) bool {
+	//Se coloca en posición del aputnado
+	offset := int64(vdSuperBoot.SbApDetalleDirectorio + n*int32(unsafe.Sizeof(*d)))
+	virtualDisk.Seek(offset, 0)
+	//Escribe el struct en un stream de bytes
+	bin := new(bytes.Buffer)
+	binary.Write(bin, binary.BigEndian, d)
+	//Escrib el estruct en e disco
+	if _, err := virtualDisk.Write(bin.Bytes()); err != nil {
+		return false
+	}
+	return true
+
+}
+
+//CreateFile ...
+func (d *Dd) CreateFile(name, cont string, size int32) {
+	//Verifica si hay espacio para un nuevo archivo
+
+	for i := 0; i < 5; i++ {
+		//Para determinar si el dfil está ocupado
+		//Se comparará el indice del elemento 0 para filenombre
+		idxEnd := bytes.IndexByte(d.ArrayFiles[i].FileNombre[:], 0)
+		if idxEnd == 0 {
+			//Dfile disponible
+			// d.ArrayFiles[i].NewDdFile(name)
+			// d.ArrayFiles[i].
+		}
+	}
+	//Utiliza el apuntador indirecto
+	if d.ApDetalleDirectorio == -1 {
+		//Busca espacio
+		bm := Getbitmap(BitmapDd)
+		pDD, flag := bm.FindSpaces(1)
+		if !flag {
+			color.New(color.FgHiRed, color.Bold).Println("Mkfile: no hay espacio disponible")
+			return
+		}
+		//Escribe el nuevo detalle de directorio
+		nuevoDd := Dd{ApDetalleDirectorio: -1}
+		nuevoDd.ReadDd(pDD)
+	}
+	//Lee el apuntador indirecto
+	var newDd Dd
+	newDd.ReadDd(d.ApDetalleDirectorio)
+	newDd.CreateFile(name, cont, size)
 }
 
 //tourDD busca en una coincidencia con el nombre dado

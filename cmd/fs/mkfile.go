@@ -80,25 +80,10 @@ func (m *Mkfile) Run() {
 			//Se puede crear los archivos
 			path := strings.Split(path, "/")
 			path = path[1:]
-			flag, res := avd.CreateDir("/", path)
-			if !flag {
-				switch res {
-				case 0:
-					color.New(color.FgHiYellow).Printf("Mkfile: '%v' no se creó, ya existe (%v)\n", m.path, m.Row)
-					color.New(color.FgHiRed, color.Bold).Println("Mkfile fracasó", "")
-				case 2:
-					color.New(color.FgHiYellow).Printf("Mkfile: '%v' no se puede crear (%v)\n", m.path, m.Row)
-					color.New(color.FgHiRed, color.Bold).Println("Mkfile fracasó", "")
-				case 3:
-					color.New(color.FgHiYellow).Printf("Mkfile: '%v' no es una dirección válida (%v)\n", m.path, m.Row)
-					color.New(color.FgHiRed, color.Bold).Println("Mkfile fracasó", "")
-				case 4:
-					color.New(color.FgHiYellow).Printf("Mkfile: '%v' no se puede leer el disco (%v)\n", m.path, m.Row)
-					color.New(color.FgHiRed, color.Bold).Println("Mkfile fracasó", "")
-				}
-			} else {
-				color.New(color.FgHiGreen, color.Bold).Printf("Mkfile: '%v' creado exitosamente\n\n", m.path)
-			}
+			avd.CreateFile("/", m.cont, path, m.size)
+			//Actualiza el registro del primer avd
+			avd.WriteAvd(0)
+			color.New(color.FgHiBlue, color.Bold).Println("Mkfile ha finalizado", "")
 		}
 	case 3:
 		//No es directorio

@@ -162,30 +162,79 @@ func (a *Avd) tourAVD(dir []string) (int32, byte) {
 	return -1, 2
 }
 
+//CreateFile toma el arreglo to, y asume que el último elemento es el archivo
+//a crear
+func (a *Avd) CreateFile(from, cont string, to []string, size int32) {
+	//Almacenará el puntero del avd que se deberá utilizar para recuperar el detalle de directorio
+	avdPointer := int32(0)
+	//Si solo hay un elemento en to, se crea inmediatamente el archivo
+	//Si hay más de un elemento en to, se crean las carpetas y luego se crear el archivo
+	if len(to) > 1 {
+		newFrom := from
+		a.CreateDir(&newFrom, to[:1])
+		//Busca el apuntador del ultimo directorio
+		temPointer, res := a.Find(newFrom[:len(newFrom)-1])
+		if res != 0 {
+			color.New(color.FgHiRed, color.Bold).Println("MKfile: no se pudo crear el archivo")
+			return
+		}
+		//Mantiene el apuntador del últimod directorio
+		avdPointer = temPointer
+	}
+	//Lee el avd del directorio
+	var lastDir Avd
+	lastDir.ReadAvd(avdPointer)
+	//Verifica si ya está asignado el detalle de directorio
+	if lastDir.ApDetalleDirectorio == -1 {
+		//Busca espacio para bitmap de detalle de directio
+		bmDd := Getbitmap(BitmapDd)
+		pDd, flag := bmDd.FindSpaces(1)
+		if !flag {
+			color.New(color.FgHiRed, color.Bold).Println("BitmapDD: no hay espacio disponible")
+			return
+		}
+		//Escribe el nuevo dd en el espacio correspondiente
+		dd := Dd{ApDetalleDirectorio: -1}
+		dd.WriteDd(pDd)
+		writeBM(BitmapDd, pDd)
+		lastDir.ApDetalleDirectorio = pDd
+	}
+	//Busca el directorio en el que se debe crear el archivo
+	//Crea el archivo en el detalle de directorio
+	var dd Dd
+	dd.ReadDd(lastDir.ApDetalleDirectorio)
+	dd.CreateFile(to[len(to)-1], cont, size)
+}
+
 //CreateDir ...
-func (a *Avd) CreateDir(from string, to []string, pos int32) {
+func (a *Avd) CreateDir(from *string, to []string) {
 	//Verifica que to aún tenga datos
 	if len(to) == 0 {
 		return
 	}
 	//Arma el path a buscar
-	from += strings.Join(to[:1], "/")
+	*from += to[0]
 	//Busca el path
-	pAvd, tipe := a.Find(from)
+	pAvd, tipe := a.Find(*from)
 	if tipe == 0 {
 		//El directorio existe
 		var avd Avd
 		//Lee el apuntador del directorio
 		avd.ReadAvd(pAvd)
 		//Crea el siguiente directorio en el directorio recien leído
-		avd.CreateDir(from, to[1:], pAvd)
+		*from += "/"
+		avd.CreateDir(from, to[1:])
 		//Actualiza el directorio
 		avd.WriteAvd(pAvd)
 	} else if tipe == 2 {
 		//El directorio no existe
 		//Busca espacio en el bimap
 		bm := Getbitmap(BitmapAvd)
-		pAvd, _ := bm.FindSpaces(1)
+		pAvd, flag := bm.FindSpaces(1)
+		if !flag {
+			color.New(color.FgHiRed, color.Bold).Println("BitmapAVD: no hay espacio disponible")
+			return
+		}
 		//Añade el puntero al avd
 		a.addPointer(pAvd)
 		//Escribe el nuevo directorio
@@ -214,7 +263,11 @@ func (a *Avd) addPointer(n int32) {
 		avd.copyAvd(*a)
 		//Busca espacio en el bitmap
 		bm := Getbitmap(BitmapAvd)
-		pAvd, _ := bm.FindSpaces(1)
+		pAvd, flag := bm.FindSpaces(1)
+		if !flag {
+			color.New(color.FgHiRed, color.Bold).Println("BitmapAVD: no hay espacio disponible")
+			return
+		}
 		//Añade el puntero n
 		avd.addPointer(n)
 		//Escribe el nuevo avd
@@ -258,23 +311,27 @@ func validatePath(path string) ([]string, bool) {
 
 //CreateRep recorre todos los registros de avd para generar un
 //texto con nodos de grapvhiz
-func (a *Avd) CreateRep(n int32) string {
+func (a *Avd) CreateRep(n int32, dd bool) string {
 	var strd strings.Builder
 	//Recuper la representación en graphviz del avd actual
 	strd.WriteString(a.getHTML(n))
+	//Recupera la info del detalle de directorio
+	if dd {
+
+	}
 	//Recorre el array de subdirectorios
 	for _, pAvd := range a.ApArraySubdirectorios {
 		if pAvd > 0 {
 			var newAvd Avd
 			newAvd.ReadAvd(pAvd)
-			strd.WriteString(newAvd.CreateRep(pAvd))
+			strd.WriteString(newAvd.CreateRep(pAvd, dd))
 		}
 	}
 	//Recupera el texto del aputnador indirecto
 	if a.ApArbolVirtualDirectorio != -1 {
 		var newAvd Avd
 		newAvd.ReadAvd(a.ApArbolVirtualDirectorio)
-		strd.WriteString(newAvd.CreateRep(a.ApArbolVirtualDirectorio))
+		strd.WriteString(newAvd.CreateRep(a.ApArbolVirtualDirectorio, dd))
 	}
 	return strd.String()
 }
