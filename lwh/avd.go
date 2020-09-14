@@ -161,61 +161,84 @@ func (a *Avd) tourAVD(dir []string) (int32, byte) {
 	return -1, 2
 }
 
-//CreateDir true si logra crear el directorio, falso si no
-//0 - ya existe el directorio
-//1 - se logró crear el directorio
-//2 - no se pudo crear el directorio
-//3 - el path no era válido
-//4 - no se pudo leer el disco
-func (a *Avd) CreateDir(from string, to []string) (bool, int) {
-	//Verifica que 'to', tenga datos
+//CreateDir ...
+func (a *Avd) CreateDir(from string, to []string, pos int32) {
+	//Verifica que to aún tenga datos
 	if len(to) == 0 {
-		//Si llega a este punto, es porque no se creó nada
-		//0 - ya existe el directorio
-		return false, 0
+		return
 	}
 	//Arma el path a buscar
 	from += strings.Join(to[:1], "/")
-	//Busca el path, utilizando 'from'
+	//Busca el path
 	pAvd, tipe := a.Find(from)
-	if tipe == 3 {
-		//3 - el path no era válido
-		return false, 3
-	} else if tipe == 4 {
-		//4 - no se pudo leer el disco
-		return false, 4
-	} else if tipe == 0 {
-		//Si encuentra algo debe ser un directorio, si no es un error
-		var newAvd Avd
-		//Recupera la información del nuevo avd
-		newAvd.ReadAvd(pAvd)
-		//Crea el directorio en ese avd
-		return newAvd.CreateDir(from, to[1:])
+	if tipe == 0 {
+		//El directorio existe
+		var avd Avd
+		//Lee el apuntador del directorio
+		avd.ReadAvd(pAvd)
+		//Crea el siguiente directorio en el directorio recien leído
+		avd.CreateDir(from, to[1:], pAvd)
+		//Actualiza el directorio
+		avd.WriteAvd(pAvd)
 	} else if tipe == 2 {
-		//No se encontró, entonces debe crearse
-		//Recupera el bitmap para el arbol de directorio
-		avdBm := Bitmap(Getbitmap(BitmapAvd))
-		if bmAp, flag := avdBm.FindSpaces(1); flag {
-			//Crea un nuevo avd
-			var newAvd Avd
-			newAvd.NewAvd(to[0], "664", logUser.uid, logUser.gid)
-			//Escribe el nuevo avd
-			if newAvd.WriteAvd(bmAp) {
-				//Escribe el bmp
-				if writeBM(BitmapAvd, bmAp) {
-					//Se creó correctamente el directorio
-					//Verifica si to, aún tiene datos
-					if len(to) > 0 {
-						return newAvd.CreateDir(from, to[1:])
-					}
-					return true, 1
-				}
-				return false, 2
-			}
-			return false, 2
+		//El directorio no existe
+		//Busca espacio en el bimap
+		bm := Getbitmap(BitmapAvd)
+		pAvd, _ := bm.FindSpaces(1)
+		//Añade el puntero al avd
+		a.addPointer(pAvd)
+		//Escribe el nuevo directorio
+		var avd Avd
+		avd.NewAvd(to[0], "664", logUser.uid, logUser.gid)
+		avd.WriteAvd(pAvd)
+		writeBM(BitmapAvd, pAvd)
+	}
+}
+
+//addPointer busca una posición libre para añadir el puntero n.
+//Si ya no hay espacios verifica el apuntador indirecto
+func (a *Avd) addPointer(n int32) {
+	for _, pAvd := range a.ApArraySubdirectorios {
+		if pAvd == 0 {
+			pAvd = n
+			return
 		}
 	}
-	return false, 2
+	//No se escribió ninguno
+	//Verifica el apuntado indirecto
+	if a.ApArbolVirtualDirectorio == -1 {
+		//No ha sido creado
+		///Copia los atributos
+		var avd Avd
+		avd.copyAvd(*a)
+		//Busca espacio en el bitmap
+		bm := Getbitmap(BitmapAvd)
+		pAvd, _ := bm.FindSpaces(1)
+		//Añade el puntero n
+		avd.addPointer(n)
+		//Escribe el nuevo avd
+		avd.WriteAvd(pAvd)
+		//Escribe el bitmap
+		writeBM(BitmapAvd, pAvd)
+		a.ApArbolVirtualDirectorio = pAvd
+	} else {
+		//ya ha sido creado
+		var avd Avd
+		avd.ReadAvd(a.ApArbolVirtualDirectorio)
+		avd.addPointer(n)
+		avd.WriteAvd(a.ApArbolVirtualDirectorio)
+	}
+}
+
+//copyAvd copia los atributos del avd
+func (a *Avd) copyAvd(ref Avd) {
+	copy(a.FechaCreacion[:], ref.FechaCreacion[:])
+	copy(a.NombreDirectorio[:], ref.NombreDirectorio[:])
+	copy(a.Auth[:], ref.Auth[:])
+	a.ApArbolVirtualDirectorio = -1
+	a.ApDetalleDirectorio = -1
+	a.Proper = ref.Proper
+	a.Gid = ref.Gid
 }
 
 //validatePath el offset es la posición la cual hay que leer
