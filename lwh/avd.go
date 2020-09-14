@@ -248,9 +248,9 @@ func (a *Avd) CreateDir(from *string, to []string) {
 //addPointer busca una posición libre para añadir el puntero n.
 //Si ya no hay espacios verifica el apuntador indirecto
 func (a *Avd) addPointer(n int32) {
-	for _, pAvd := range a.ApArraySubdirectorios {
-		if pAvd == 0 {
-			pAvd = n
+	for i := 0; i < 6; i++ {
+		if a.ApArraySubdirectorios[i] == 0 {
+			a.ApArraySubdirectorios[i] = n
 			return
 		}
 	}
@@ -355,14 +355,14 @@ func (a *Avd) getHTML(n int32) string {
 	for i, pAvd := range a.ApArraySubdirectorios {
 		if pAvd > 0 {
 			strd.WriteString("		<tr>\n")
-			strd.WriteString("		<td port='dp_" + fmt.Sprint(pAvd) + "' bgcolor='#2980b9' >dp" + fmt.Sprint(i+1) + "</td><td>" + fmt.Sprint(pAvd) + "</td>\n")
+			strd.WriteString("		<td bgcolor='#2980b9' >dp" + fmt.Sprint(i+1) + "</td><td port='dp_" + fmt.Sprint(pAvd) + "'  >" + fmt.Sprint(pAvd) + "</td>\n")
 			edge.WriteString("avd_" + fmt.Sprint(n) + ":dp_" + fmt.Sprint(pAvd) + "-> avd_" + fmt.Sprint(pAvd) + "\n")
 			strd.WriteString("		</tr>\n")
 		}
 	}
 	if a.ApArbolVirtualDirectorio != -1 {
 		strd.WriteString("		<tr>\n")
-		strd.WriteString("		<td port='dp_" + fmt.Sprint(a.ApArbolVirtualDirectorio) + "' bgcolor='#2980b9'>ip</td><td>" + fmt.Sprint(a.ApArbolVirtualDirectorio) + "</td>\n")
+		strd.WriteString("		<td  bgcolor='#2980b9'>ip</td><td port='dp_" + fmt.Sprint(a.ApArbolVirtualDirectorio) + "' >" + fmt.Sprint(a.ApArbolVirtualDirectorio) + "</td>\n")
 		edge.WriteString("avd_" + fmt.Sprint(n) + ":ip_" + fmt.Sprint(a.ApArbolVirtualDirectorio) + " -> avd_" + fmt.Sprint(a.ApArbolVirtualDirectorio) + "\n")
 		strd.WriteString("		</tr>\n")
 	}

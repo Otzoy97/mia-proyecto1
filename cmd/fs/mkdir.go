@@ -79,7 +79,7 @@ func (m *Mkdir) Run() {
 			color.New(color.FgHiRed, color.Bold).Println("Mkdir fracasó", "")
 		} else {
 			//Se puede crear los archivos
-			path := strings.Split(path, "/")
+			path := strings.Split(m.path, "/")
 			path = path[1:]
 			root := "/"
 			avd.CreateDir(&root, path)
