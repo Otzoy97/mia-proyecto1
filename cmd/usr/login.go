@@ -1,6 +1,7 @@
 package usr
 
 import (
+	"fmt"
 	"mia-proyecto1/disk"
 	"mia-proyecto1/lwh"
 	"strings"
@@ -19,7 +20,7 @@ func (l *Login) AddOp(k string, v interface{}) {
 	if k == "usr" {
 		l.usr = v.(string)
 	} else if k == "pwd" {
-		l.pwd = v.(string)
+		l.pwd = fmt.Sprint(v)
 	} else if k == "id" {
 		l.id = v.(string)
 	}
@@ -60,6 +61,7 @@ func (l *Login) Run() {
 		//Es un error, no se pudo recuperar el puntero
 		color.New(color.FgHiYellow).Printf("Login: no se pudo leer user.txt (%v)\n", l.Row)
 		color.New(color.FgHiRed, color.Bold).Println("Login fracasó", "")
+		lwh.UnmountVDisk()
 		return
 	}
 	//Si se pudo recuperar el puntero de user.txt
@@ -75,6 +77,7 @@ func (l *Login) Run() {
 		if uid == 0 {
 			color.New(color.FgHiYellow).Printf("Login: el usuario '%v' no existe (%v)\n", l.usr, l.Row)
 			color.New(color.FgHiRed, color.Bold).Println("Login fracasó", "")
+			lwh.UnmountVDisk()
 			return
 		}
 		//Buscca el gid
@@ -82,14 +85,17 @@ func (l *Login) Run() {
 		if gid == 0 {
 			color.New(color.FgHiYellow).Printf("Login: el grupo '%v' del usuario '%v' no existe (%v)\n", group, l.usr, l.Row)
 			color.New(color.FgHiRed, color.Bold).Println("Login fracasó", "")
+			lwh.UnmountVDisk()
 			return
 		}
 		//Almacena el usuario
 		if !lwh.Login(uid, gid) {
 			color.New(color.FgHiYellow).Printf("Login: ya hay una sesión activa. Cierre una sesión para iniciar otra (%v)\n", l.Row)
 			color.New(color.FgHiRed, color.Bold).Println("Login fracasó", "")
+			lwh.UnmountVDisk()
 			return
 		}
 		color.New(color.FgHiGreen, color.Bold).Printf("Login: '%v' inició sesión\n\n", l.usr)
+		lwh.UnmountVDisk()
 	}
 }

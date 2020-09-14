@@ -81,7 +81,8 @@ func (m *Mkdir) Run() {
 			//Se puede crear los archivos
 			path := strings.Split(path, "/")
 			path = path[1:]
-			avd.CreateDir("/", path)
+			root := "/"
+			avd.CreateDir(&root, path)
 			color.New(color.FgHiBlue, color.Bold).Println("Mkdir ha finalizado", "")
 		}
 	case 3:

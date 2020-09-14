@@ -317,7 +317,6 @@ func (a *Avd) CreateRep(n int32, dd bool) string {
 	strd.WriteString(a.getHTML(n))
 	//Recupera la info del detalle de directorio
 	if dd {
-
 	}
 	//Recorre el array de subdirectorios
 	for _, pAvd := range a.ApArraySubdirectorios {

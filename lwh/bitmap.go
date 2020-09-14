@@ -25,7 +25,7 @@ const (
 //FindSpaces busca la primera posición libre en el bitmap que cumpla con el Fit f
 //y que indique el inicio de espacio para albergar la cantidad 'spaces' de structs
 func (b *Bitmap) FindSpaces(spaces int) (int32, bool) {
-	var dict map[int]int
+	var dict map[int]int = map[int]int{}
 	var cte int
 	//Busca los espacios libres y desde ahí cuenta cuántos espacios libres hay
 	for i, val := range *b {
