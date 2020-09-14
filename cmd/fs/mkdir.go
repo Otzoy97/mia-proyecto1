@@ -83,6 +83,8 @@ func (m *Mkdir) Run() {
 			path = path[1:]
 			root := "/"
 			avd.CreateDir(&root, path)
+			//Sobreescribe el avd
+			avd.WriteAvd(0)
 			color.New(color.FgHiBlue, color.Bold).Println("Mkdir ha finalizado", "")
 		}
 	case 3:
