@@ -3,6 +3,7 @@ package lwh
 import (
 	"bytes"
 	"encoding/binary"
+	"fmt"
 	"regexp"
 	"strings"
 	"time"
@@ -253,4 +254,64 @@ func validatePath(path string) ([]string, bool) {
 	psplit := strings.Split(path, "/")
 	//Quita el primer directorio
 	return psplit[1:], true
+}
+
+//CreateRep recorre todos los registros de avd para generar un
+//texto con nodos de grapvhiz
+func (a *Avd) CreateRep(n int32) string {
+	var strd strings.Builder
+	//Recuper la representación en graphviz del avd actual
+	strd.WriteString(a.getHTML(n))
+	//Recorre el array de subdirectorios
+	for _, pAvd := range a.ApArraySubdirectorios {
+		if pAvd > 0 {
+			var newAvd Avd
+			newAvd.ReadAvd(pAvd)
+			strd.WriteString(newAvd.CreateRep(pAvd))
+		}
+	}
+	//Recupera el texto del aputnador indirecto
+	if a.ApArbolVirtualDirectorio != -1 {
+		var newAvd Avd
+		newAvd.ReadAvd(a.ApArbolVirtualDirectorio)
+		strd.WriteString(newAvd.CreateRep(a.ApArbolVirtualDirectorio))
+	}
+	return strd.String()
+}
+
+//getHTML recupera una tabla html que representa al avd en graphviz
+func (a *Avd) getHTML(n int32) string {
+	var strd strings.Builder
+	var edge strings.Builder
+	strd.WriteString("avd_" + fmt.Sprint(n) + " [\n")
+	strd.WriteString("	label=<\n")
+	strd.WriteString("		<table border='0' cellspacing='0' cellborder='1'>\n")
+	//Recupera un slice del nombre de la partición hasta encontrar un caracter nulo
+	idxEnd := bytes.IndexByte(a.NombreDirectorio[:], 0)
+	if idxEnd == -1 {
+		//Si no hay caracter nulo se tomará todo el array
+		idxEnd = 20
+	}
+	tempName := string(a.NombreDirectorio[:idxEnd])
+	strd.WriteString("		<tr>\n")
+	strd.WriteString("		<td bgcolor='#2980b9' colspan='2'>" + tempName + "</td>\n")
+	strd.WriteString("		</tr>\n")
+	for i, pAvd := range a.ApArraySubdirectorios {
+		if pAvd > 0 {
+			strd.WriteString("		<tr>\n")
+			strd.WriteString("		<td port='dp_" + fmt.Sprint(pAvd) + "' bgcolor='#2980b9' >dp" + fmt.Sprint(i+1) + "</td><td>" + fmt.Sprint(pAvd) + "</td>\n")
+			edge.WriteString("avd_" + fmt.Sprint(n) + ":dp_" + fmt.Sprint(pAvd) + "-> avd_" + fmt.Sprint(pAvd) + "\n")
+			strd.WriteString("		</tr>\n")
+		}
+	}
+	if a.ApArbolVirtualDirectorio != -1 {
+		strd.WriteString("		<tr>\n")
+		strd.WriteString("		<td port='dp_" + fmt.Sprint(a.ApArbolVirtualDirectorio) + "' bgcolor='#2980b9'>ip</td><td>" + fmt.Sprint(a.ApArbolVirtualDirectorio) + "</td>\n")
+		edge.WriteString("avd_" + fmt.Sprint(n) + ":ip_" + fmt.Sprint(a.ApArbolVirtualDirectorio) + " -> avd_" + fmt.Sprint(a.ApArbolVirtualDirectorio) + "\n")
+		strd.WriteString("		</tr>\n")
+	}
+	strd.WriteString("		</table>\n")
+	strd.WriteString("	>]\n\n")
+	strd.WriteString(edge.String())
+	return strd.String()
 }

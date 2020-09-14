@@ -31,9 +31,9 @@ func (m *Rep) Validate() bool {
 	f := true
 	m.exec = false
 	bRuta := cmd.ValidateOptions(&m.Oplst, "ruta")
-	if cmd.ValidateOptions(&m.Oplst, "nombre") {
+	if cmd.ValidateOptions(&m.Oplst, "name") {
 		//Si el nombre es igual a ls o file, bRuta sería obligatorio
-		if m.Oplst["nombre"].(string) == "ls" || m.Oplst["nombre"].(string) == "file" {
+		if m.Oplst["name"].(string) == "ls" || m.Oplst["name"].(string) == "file" {
 			if bRuta {
 				m.ruta = m.Oplst["ruta"].(string)
 				m.exec = true
@@ -43,7 +43,7 @@ func (m *Rep) Validate() bool {
 			}
 		}
 	} else {
-		color.New(color.FgHiYellow).Printf("Rep: nombre no se encontró (%v)\n", m.Row)
+		color.New(color.FgHiYellow).Printf("Rep: name no se encontró (%v)\n", m.Row)
 		f = false
 	}
 	if !cmd.ValidateOptions(&m.Oplst, "path") {
@@ -58,7 +58,7 @@ func (m *Rep) Validate() bool {
 		color.New(color.FgHiRed, color.Bold).Println("Rep no se puede ejecutar")
 		return false
 	}
-	m.nombre = m.Oplst["nombre"].(string)
+	m.nombre = m.Oplst["name"].(string)
 	m.path = m.Oplst["path"].(string)
 	m.id = m.Oplst["id"].(string)
 	return true
@@ -184,6 +184,13 @@ func (m *Rep) createCont(mbr *disk.Mbr) []byte {
 		lwh.UnmountVDisk()
 		//Crea el texto para el reporte
 		return m.CreateLog(logArr)
+	case "directorio":
+		//Monta el sistema de archivos
+		lwh.MountVDisk(m.diskPath, m.namePath)
+		//Recupera el texto
+		b := m.CreateDir()
+		lwh.UnmountVDisk()
+		return b
 	}
 	return []byte{}
 }
